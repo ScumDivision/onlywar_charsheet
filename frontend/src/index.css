@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-imperial-dark text-phosphor-green font-mono overflow-hidden;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-gothic text-tarnished-gold uppercase tracking-wider;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 5px rgba(72, 187, 120, 0.7);
+  }
+  
+  .border-glow {
+    box-shadow: 0 0 5px rgba(72, 187, 120, 0.4);
+  }
+  
+  .crt-overlay {
+    background: linear-gradient(
+      rgba(18, 16, 16, 0) 50%, 
+      rgba(0, 0, 0, 0.25) 50%
+    ), linear-gradient(
+      90deg, 
+      rgba(255, 0, 0, 0.06), 
+      rgba(0, 255, 0, 0.02), 
+      rgba(0, 0, 255, 0.06)
+    );
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+  }
+}

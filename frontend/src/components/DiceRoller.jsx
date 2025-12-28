@@ -4,7 +4,7 @@ import { Dices } from 'lucide-react';
 import clsx from 'clsx';
 
 const DiceRoller = ({ label, target }) => {
-  const { triggerFeedback } = useGame();
+  const { triggerFeedback, addToLog, t } = useGame();
   const [modifier, setModifier] = useState(0);
   const [lastRoll, setLastRoll] = useState(null);
 
@@ -14,23 +14,30 @@ const DiceRoller = ({ label, target }) => {
     const degrees = Math.floor((effectiveTarget - roll) / 10);
     
     let resultType = 'failure';
-    let message = 'Failure';
+    let message = t('failure');
 
     if (roll === 1) {
         resultType = 'crit_success';
-        message = 'EMPEROR PROTECTS!';
+        message = t('crit_success');
     } else if (roll === 100) {
         resultType = 'crit_fail';
-        message = 'WARP PERIL!';
+        message = t('crit_fail');
     } else if (roll <= effectiveTarget) {
         resultType = 'success';
-        message = `Success (${degrees} DoS)`;
+        message = `${t('success')} (${degrees} ${t('dos')})`;
     } else {
         resultType = 'failure';
-        message = `Failure (${Math.abs(degrees)} DoF)`;
+        message = `${t('failure')} (${Math.abs(degrees)} ${t('dof')})`;
     }
 
     setLastRoll(roll);
+    addToLog({
+        label,
+        target: effectiveTarget,
+        roll,
+        result: message,
+        type: resultType
+    });
     triggerFeedback(resultType, `${label}: ${roll} vs ${effectiveTarget} - ${message}`);
   };
 

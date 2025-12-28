@@ -40,8 +40,18 @@ class CharacterModel(Base):
     total_fate = Column(Integer)
     fatigue = Column(Integer, default=0)
     
+    # New Vitals
+    insanity = Column(Integer, default=0)
+    corruption = Column(Integer, default=0)
+    movement = Column(Integer, default=3) # Base Half-Move
+    
     # JSON Blobs
-    skills = Column(JSON, default={})
+    skills = Column(JSON, default=[])
+    weapons = Column(JSON, default=[])
+    talents = Column(JSON, default=[])
+    armour = Column(JSON, default={})
+    gear = Column(String, default="")
+    xp = Column(JSON, default={"current": 0, "spent": 0, "total": 0})
     inventory = Column(JSON, default={})
 
 Base.metadata.create_all(bind=engine)
@@ -66,7 +76,15 @@ class CharacterBase(BaseModel):
     current_fate: int
     total_fate: int
     fatigue: int
-    skills: Dict[str, Any] = {}
+    insanity: int = 0
+    corruption: int = 0
+    movement: int = 3
+    skills: List[Dict[str, Any]] = []
+    weapons: List[Dict[str, Any]] = []
+    talents: List[Dict[str, Any]] = []
+    armour: Dict[str, Any] = {}
+    gear: str = ""
+    xp: Dict[str, int] = {"current": 0, "spent": 0, "total": 0}
     inventory: Dict[str, Any] = {}
 
     class Config:

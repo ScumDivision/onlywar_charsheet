@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoller from './DiceRoller';
-import { User, Activity, Shield, Brain, Eye, Zap, Heart } from 'lucide-react';
+import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe } from 'lucide-react';
+import clsx from 'clsx';
 
 const StatBlock = ({ title, children, className }) => (
   <div className={`p-4 border border-phosphor-dim/50 bg-black/20 relative ${className}`}>
@@ -11,113 +12,519 @@ const StatBlock = ({ title, children, className }) => (
     <div className="mt-4 grid gap-4">
       {children}
     </div>
-    {/* Corner accents */}
     <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-phosphor-green"></div>
     <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-phosphor-green"></div>
   </div>
 );
 
 const CharacterSheet = () => {
-  const { character, updateCharacter } = useGame();
+  const { character, setCharacter, saveCharacter, savedCharacters, loadCharacter, deleteCharacter, createNewCharacter, rollDamage, t, toggleLanguage, language } = useGame();
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  const handleCharChange = (key, value) => {
-    // In a real app, we'd debounce this or have a save button
-    // For now, let's just update local state logic if we were fully connecting
-    // But since context has setters, we assume immediate update for UI feel
-    // We can't easily deep update the context object without a specific setter in this simplified version
-    // So we will just display read-only or local edit for now in this prototype phase
-    // Or better, trigger an update
-    console.log("Update requested:", key, value);
-    // updateCharacter(character.id, { ...character, [key]: value });
+  const updateField = (field, value) => {
+      setCharacter(prev => ({ ...prev, [field]: value }));
   };
 
+  const updateNestedField = (category, key, subkey, value) => {
+      setCharacter(prev => ({
+          ...prev,
+          [category]: {
+              ...prev[category],
+              [key]: subkey ? { ...prev[category][key], [subkey]: value } : value
+          }
+      }));
+  };
+
+  // --- Skills Logic ---
+  const handleSkillChange = (index, field, value) => {
+      const newSkills = [...character.skills];
+      newSkills[index] = { ...newSkills[index], [field]: value };
+      setCharacter(prev => ({ ...prev, skills: newSkills }));
+  };
+  const addSkill = () => setCharacter(prev => ({ ...prev, skills: [...prev.skills, { name: "New Skill", characteristic: "int", bonus: 0 }] }));
+  const removeSkill = (index) => setCharacter(prev => ({ ...prev, skills: prev.skills.filter((_, i) => i !== index) }));
+
+  // --- Weapons Logic ---
+  const addWeapon = () => setCharacter(prev => ({ 
+      ...prev, 
+      weapons: [...prev.weapons, { 
+          name: "Lasgun", class: "Basic", range: "100m", rof: "S/3/-", 
+          dmg: "1d10+3", type: "E", pen: 0, clip: 60, rld: "Full", special: "Reliable" 
+      }] 
+  }));
+  const removeWeapon = (index) => setCharacter(prev => ({ ...prev, weapons: prev.weapons.filter((_, i) => i !== index) }));
+  const updateWeapon = (index, field, value) => {
+      const newWeapons = [...character.weapons];
+      newWeapons[index] = { ...newWeapons[index], [field]: value };
+      setCharacter(prev => ({ ...prev, weapons: newWeapons }));
+  };
+
+  // --- Talents Logic ---
+  const addTalent = () => setCharacter(prev => ({ ...prev, talents: [...prev.talents, { name: "New Talent", description: "" }] }));
+  const removeTalent = (index) => setCharacter(prev => ({ ...prev, talents: prev.talents.filter((_, i) => i !== index) }));
+  const updateTalent = (index, field, value) => {
+      const newTalents = [...character.talents];
+      newTalents[index] = { ...newTalents[index], [field]: value };
+      setCharacter(prev => ({ ...prev, talents: newTalents }));
+  };
+
+
   const characteristics = [
-    { key: 'ws', label: 'Weapon Skill', icon: Shield },
-    { key: 'bs', label: 'Ballistic Skill', icon: Eye },
-    { key: 's', label: 'Strength', icon: Zap },
-    { key: 't', label: 'Toughness', icon: Shield },
-    { key: 'ag', label: 'Agility', icon: Activity },
-    { key: 'int_', label: 'Intelligence', icon: Brain },
-    { key: 'per', label: 'Perception', icon: Eye },
-    { key: 'wp', label: 'Willpower', icon: Brain },
-    { key: 'fel', label: 'Fellowship', icon: User },
+    { key: 'ws', label: t('ws'), short: t('ws_short'), icon: Shield },
+    { key: 'bs', label: t('bs'), short: t('bs_short'), icon: Eye },
+    { key: 's', label: t('s'), short: t('s_short'), icon: Zap },
+    { key: 't', label: t('t'), short: t('t_short'), icon: Shield },
+    { key: 'ag', label: t('ag'), short: t('ag_short'), icon: Activity },
+    { key: 'int_', label: t('int'), short: t('int_short'), icon: Brain },
+    { key: 'per', label: t('per'), short: t('per_short'), icon: Eye },
+    { key: 'wp', label: t('wp'), short: t('wp_short'), icon: Brain },
+    { key: 'fel', label: t('fel'), short: t('fel_short'), icon: User },
   ];
 
+  const charMap = {
+      'WS': 'ws', 'BS': 'bs', 'S': 's', 'T': 't', 'Ag': 'ag', 
+      'Int': 'int_', 'Per': 'per', 'WP': 'wp', 'Fel': 'fel',
+      // German fallback for logic if stored strings differ, though ideally we store keys
+      'KG': 'ws', 'BF': 'bs', 'W': 't', 'GE': 'ag', 
+      'IN': 'int_', 'WA': 'per', 'WK': 'wp', 'CH': 'fel'
+  };
+  
+  // Helper to find char value from standard or localized key
+  const getCharValue = (key) => {
+      // Normalize key
+      const mapped = charMap[key] || charMap[Object.keys(charMap).find(k => k.toLowerCase() === key.toLowerCase())];
+      return character[mapped] || 0;
+  };
+
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 relative z-10">
+    <div className="max-w-7xl mx-auto p-2 space-y-6 relative z-10 pb-20">
       
-      {/* Header Info */}
-      <StatBlock title="Personnel Record" className="border-t-4 border-t-tarnished-gold">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {['name', 'regiment', 'specialty', 'demeanour'].map((field) => (
-            <div key={field} className="flex flex-col">
-              <label className="text-[10px] uppercase text-gray-500 mb-1">{field}</label>
-              <input 
-                type="text" 
-                defaultValue={character[field]}
-                className="bg-transparent border-b border-phosphor-dim text-phosphor-green font-gothic text-lg focus:outline-none focus:border-phosphor-green"
-              />
+      {/* Control Bar */}
+      <div className="flex flex-wrap gap-2 justify-between items-center mb-4 p-2 bg-black/40 border-b border-phosphor-dim/30 sticky top-0 z-50 backdrop-blur-md">
+        <div className="flex gap-2">
+            <button onClick={createNewCharacter} className="btn-control flex items-center gap-2 hover:text-white"><FilePlus size={16}/> {t('new')}</button>
+            <button onClick={() => setShowLoadModal(true)} className="btn-control flex items-center gap-2 hover:text-white"><FolderOpen size={16}/> {t('load')}</button>
+            <button onClick={saveCharacter} className="btn-control flex items-center gap-2 hover:text-phosphor-green"><Save size={16}/> {t('save')}</button>
+        </div>
+        
+        <div className="flex items-center gap-4">
+             <button onClick={toggleLanguage} className="btn-control flex items-center gap-2 hover:text-tarnished-gold">
+                <Globe size={16}/> {language.toUpperCase()}
+             </button>
+
+             <button 
+                onClick={() => setIsEditMode(!isEditMode)} 
+                className={clsx(
+                    "btn-control flex items-center gap-2 transition-all px-4 py-1 rounded border",
+                    isEditMode ? "bg-phosphor-green/20 border-phosphor-green text-phosphor-green shadow-[0_0_10px_rgba(72,187,120,0.3)]" : "bg-transparent border-white/10 text-gray-500 hover:text-white"
+                )}
+            >
+                {isEditMode ? <><Edit3 size={16}/> {t('editingActive')}</> : <><Lock size={16}/> {t('viewOnly')}</>}
+            </button>
+            
+            {character.id && isEditMode && (
+                <button onClick={() => deleteCharacter(character.id)} className="btn-control flex items-center gap-2 text-red-500 hover:text-red-400 border-l border-white/10 pl-4"><Trash2 size={16}/> {t('delete')}</button>
+            )}
+        </div>
+      </div>
+
+      {/* Load Modal */}
+      {showLoadModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+              <div className="bg-imperial-dark border border-tarnished-gold p-6 w-full max-w-md shadow-[0_0_20px_rgba(197,160,89,0.2)]">
+                  <h3 className="font-gothic text-xl text-tarnished-gold mb-4 border-b border-white/10 pb-2">{t('selectRecord')}</h3>
+                  <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                      {savedCharacters.map(char => (
+                          <div key={char.id} className="flex justify-between items-center p-2 hover:bg-white/5 cursor-pointer group"
+                               onClick={() => { loadCharacter(char.id); setShowLoadModal(false); }}>
+                              <div>
+                                  <div className="font-bold text-phosphor-green group-hover:text-white">{char.name}</div>
+                                  <div className="text-xs text-gray-500">{char.regiment} - {char.specialty}</div>
+                              </div>
+                              <div className="text-xs text-tarnished-gold">ID: {char.id}</div>
+                          </div>
+                      ))}
+                      {savedCharacters.length === 0 && <div className="text-gray-500 italic">{t('noRecords')}</div>}
+                  </div>
+                  <button onClick={() => setShowLoadModal(false)} className="mt-4 w-full py-2 bg-red-900/30 border border-red-800 text-red-400 hover:bg-red-900/50">{t('close')}</button>
+              </div>
+          </div>
+      )}
+
+      {/* Header Info & XP */}
+      <StatBlock title={t('personnelRecord')} className="border-t-4 border-t-tarnished-gold">
+        <div className="flex flex-col md:flex-row gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+            {['name', 'regiment', 'specialty', 'demeanour'].map((field) => (
+                <div key={field} className="flex flex-col">
+                <label className="text-[10px] uppercase text-gray-500 mb-1">{t(field)}</label>
+                <input 
+                    type="text" 
+                    value={character[field]}
+                    disabled={!isEditMode}
+                    onChange={(e) => updateField(field, e.target.value)}
+                    className="bg-transparent border-b border-phosphor-dim text-phosphor-green font-gothic text-lg focus:outline-none focus:border-phosphor-green w-full disabled:border-transparent disabled:text-gray-400"
+                />
+                </div>
+            ))}
             </div>
-          ))}
+
+            {/* XP Tracker */}
+            <div className="bg-black/40 p-2 rounded border border-white/5 w-full md:w-48 flex flex-col gap-2">
+                <div className="text-xs text-tarnished-gold flex items-center gap-1"><Star size={12}/> XP</div>
+                <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <label className="text-[10px] text-gray-500">{t('total')}</label>
+                        <input 
+                            type="number" 
+                            disabled={!isEditMode}
+                            value={character.xp?.total || 0} 
+                            onChange={(e) => updateNestedField('xp', 'total', null, parseInt(e.target.value))} 
+                            className="w-full bg-transparent border-b border-gray-700 text-right font-bold text-sm disabled:border-transparent" 
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] text-gray-500">{t('spent')}</label>
+                        <input 
+                            type="number" 
+                            disabled={!isEditMode}
+                            value={character.xp?.spent || 0} 
+                            onChange={(e) => updateNestedField('xp', 'spent', null, parseInt(e.target.value))} 
+                            className="w-full bg-transparent border-b border-gray-700 text-right font-bold text-sm disabled:border-transparent" 
+                        />
+                    </div>
+                </div>
+                <div className="text-center border-t border-white/10 pt-1">
+                    <span className="text-[10px] text-gray-500 uppercase">{t('available')}: </span>
+                    <span className="text-phosphor-green font-bold">{(character.xp?.total || 0) - (character.xp?.spent || 0)}</span>
+                </div>
+            </div>
         </div>
       </StatBlock>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Characteristics */}
-        <StatBlock title="Characteristics" className="lg:col-span-2">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {characteristics.map((char) => (
-                    <DiceRoller 
-                        key={char.key} 
-                        label={char.label} 
-                        target={character[char.key]} 
-                    />
-                ))}
-            </div>
-        </StatBlock>
+        <div className="lg:col-span-2 space-y-6">
+            {/* Characteristics */}
+            <StatBlock title={t('characteristics')}>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {characteristics.map((char) => (
+                        <div key={char.key} className="relative group flex items-start"> 
+                            {isEditMode && (
+                                <div className="absolute left-10 top-7 z-20 flex flex-col">
+                                    <input 
+                                        type="number" 
+                                        className="w-12 text-center bg-black/90 text-sm font-bold text-phosphor-green border border-phosphor-green/50 rounded shadow-[0_0_5px_rgba(72,187,120,0.5)] focus:outline-none"
+                                        value={character[char.key]}
+                                        onChange={(e) => updateField(char.key, parseInt(e.target.value) || 0)}
+                                    />
+                                    <span className="text-[8px] text-center text-phosphor-dim uppercase">{t('base')}</span>
+                                </div>
+                            )}
+                            <div className="flex-1">
+                                <DiceRoller 
+                                    label={`${char.label} (${char.short})`}
+                                    target={character[char.key]} 
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </StatBlock>
 
-        {/* Vitals */}
-        <StatBlock title="Vitals & Condition">
-            <div className="space-y-4">
-                <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                    <span className="text-sm uppercase text-red-400 flex items-center gap-2"><Heart size={14}/> Wounds</span>
-                    <div className="flex items-baseline gap-2">
-                        <input type="number" className="w-12 bg-transparent text-right font-bold text-2xl text-red-500" defaultValue={character.current_wounds} />
-                        <span className="text-gray-500">/ {character.total_wounds}</span>
-                    </div>
-                </div>
-                <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                    <span className="text-sm uppercase text-tarnished-gold flex items-center gap-2"><Shield size={14}/> Fate</span>
-                    <div className="flex items-baseline gap-2">
-                        <input type="number" className="w-12 bg-transparent text-right font-bold text-2xl text-tarnished-gold" defaultValue={character.current_fate} />
-                        <span className="text-gray-500">/ {character.total_fate}</span>
-                    </div>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm uppercase text-yellow-600 flex items-center gap-2"><Activity size={14}/> Fatigue</span>
-                    <input type="number" className="w-12 bg-transparent text-right font-bold text-2xl text-yellow-600" defaultValue={character.fatigue} />
-                </div>
-            </div>
-        </StatBlock>
-      </div>
+            {/* Skills */}
+            <StatBlock title={t('knownSkills')}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {character.skills.map((skill, idx) => {
+                        const targetCharVal = getCharValue(skill.characteristic);
+                        const totalTarget = targetCharVal + skill.bonus;
 
-      {/* Skills */}
-      <StatBlock title="Known Skills">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {Object.entries(character.skills).map(([skillName, bonus]) => (
-                <div key={skillName} className="flex justify-between items-center bg-black/40 p-2 rounded">
-                    <span className="text-sm">{skillName}</span>
-                    <div className="flex gap-2 items-center">
-                        <span className="text-xs text-gray-500">{bonus >= 0 ? `+${bonus}` : bonus}</span>
-                        {/* Simplification: Assuming base characteristic for skill checks is Int or Ag, usually depends on skill */}
-                        <DiceRoller label={skillName} target={30 + bonus} /> 
-                    </div>
+                        return (
+                            <div key={idx} className="flex flex-col bg-black/40 p-2 rounded border border-white/5 gap-1 group hover:border-phosphor-dim/40 transition-colors">
+                                <div className="flex justify-between items-center">
+                                    <input 
+                                        type="text" 
+                                        disabled={!isEditMode}
+                                        value={skill.name} 
+                                        onChange={(e) => handleSkillChange(idx, 'name', e.target.value)}
+                                        className="bg-transparent text-phosphor-green font-bold text-sm w-full focus:outline-none disabled:text-gray-300"
+                                        placeholder="Skill Name"
+                                    />
+                                    {isEditMode && (
+                                        <button onClick={() => removeSkill(idx)} className="text-red-900 hover:text-red-500 transition-opacity"><Trash2 size={12}/></button>
+                                    )}
+                                </div>
+                                
+                                <div className="flex justify-between items-center text-xs">
+                                    <div className="flex gap-2">
+                                        <select 
+                                            disabled={!isEditMode}
+                                            value={skill.characteristic} 
+                                            onChange={(e) => handleSkillChange(idx, 'characteristic', e.target.value)}
+                                            className="bg-transparent text-tarnished-gold focus:outline-none disabled:appearance-none disabled:bg-none"
+                                        >
+                                            {/* We keep internal keys as values but could display localized keys */}
+                                            {Object.keys(charMap).filter(k => k.length <= 3 && k !== 'int').map(k => <option key={k} value={k}>{k}</option>)}
+                                        </select>
+                                        
+                                        <select 
+                                            disabled={!isEditMode}
+                                            value={skill.bonus}
+                                            onChange={(e) => handleSkillChange(idx, 'bonus', parseInt(e.target.value))}
+                                            className="bg-transparent text-gray-400 focus:outline-none text-right disabled:appearance-none disabled:bg-none"
+                                        >
+                                            <option value={0}>+0</option>
+                                            <option value={10}>+10</option>
+                                            <option value={20}>+20</option>
+                                            <option value={30}>+30</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-between items-center mt-1 border-t border-white/5 pt-1">
+                                    <span className="text-[10px] text-gray-600">Target: {totalTarget}</span>
+                                    <div className="scale-75 origin-right">
+                                        <DiceRoller label="" target={totalTarget} />
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {isEditMode && (
+                        <button onClick={addSkill} className="border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex justify-center items-center h-full min-h-[80px] uppercase tracking-widest text-xs rounded">
+                            <Plus size={14} /> {t('addSkill')}
+                        </button>
+                    )}
                 </div>
-            ))}
+            </StatBlock>
+
+             {/* Weapons */}
+            <StatBlock title={t('weaponsAuth')}>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-phosphor-dim border-collapse">
+                        <thead>
+                            <tr className="border-b border-white/10 text-[10px] uppercase text-tarnished-gold">
+                                <th className="p-2">{t('w_name')}</th>
+                                <th className="p-2">{t('w_class')}</th>
+                                <th className="p-2">{t('w_range')}</th>
+                                <th className="p-2">{t('w_rof')}</th>
+                                <th className="p-2">{t('w_dmg')}</th>
+                                <th className="p-2">{t('w_type')}</th>
+                                <th className="p-2">{t('w_pen')}</th>
+                                <th className="p-2">{t('w_clip')}</th>
+                                <th className="p-2">{t('w_rld')}</th>
+                                <th className="p-2">{t('w_special')}</th>
+                                <th className="p-2 text-center">{t('w_test')}</th>
+                                <th className="p-2 text-center">{t('w_dmg')}</th>
+                                {isEditMode && <th className="p-2"></th>}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {character.weapons?.map((wpn, idx) => (
+                                <tr key={idx} className="bg-black/20 hover:bg-white/5 transition-colors border-b border-white/5">
+                                    {['name', 'class', 'range', 'rof', 'dmg', 'type', 'pen', 'clip', 'rld', 'special'].map(field => (
+                                        <td key={field} className="p-1">
+                                            <input 
+                                                type="text" 
+                                                disabled={!isEditMode}
+                                                value={wpn[field]} 
+                                                onChange={(e) => updateWeapon(idx, field, e.target.value)}
+                                                className="bg-transparent w-full focus:text-white focus:outline-none disabled:text-gray-400"
+                                            />
+                                        </td>
+                                    ))}
+                                    <td className="p-1 text-center">
+                                        <div className="scale-75 origin-center">
+                                            <DiceRoller 
+                                                label={wpn.class === 'Melee' ? t('ws_short') : t('bs_short')} 
+                                                target={wpn.class === 'Melee' ? character.ws : character.bs} 
+                                            />
+                                        </div>
+                                    </td>
+                                    <td className="p-1 text-center">
+                                        <button 
+                                            onClick={() => rollDamage(wpn.name, wpn.dmg)}
+                                            className="p-1 rounded bg-red-900/30 border border-red-900 text-red-400 hover:bg-red-900 hover:text-white transition-colors"
+                                            title="Roll Damage"
+                                        >
+                                            <Sword size={14} />
+                                        </button>
+                                    </td>
+                                    {isEditMode && (
+                                        <td className="p-1 text-center">
+                                            <button onClick={() => removeWeapon(idx)} className="text-red-900 hover:text-red-500"><Trash2 size={14}/></button>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {isEditMode && (
+                    <button onClick={addWeapon} className="w-full py-2 mt-2 border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex justify-center items-center gap-2 uppercase tracking-widest text-xs">
+                        <Plus size={14} /> {t('addWeapon')}
+                    </button>
+                )}
+            </StatBlock>
+            
+            {/* Talents & Traits */}
+            <StatBlock title={t('talentsTraits')}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {character.talents?.map((talent, idx) => (
+                        <div key={idx} className="bg-black/40 p-2 rounded border border-white/5 group hover:border-phosphor-dim/40 transition-colors">
+                             <div className="flex justify-between items-start mb-1">
+                                <input 
+                                    type="text" 
+                                    disabled={!isEditMode}
+                                    value={talent.name} 
+                                    onChange={(e) => updateTalent(idx, 'name', e.target.value)}
+                                    className="bg-transparent text-phosphor-green font-bold text-sm w-full focus:outline-none disabled:text-gray-300 placeholder-gray-600"
+                                    placeholder="Name"
+                                />
+                                {isEditMode && (
+                                    <button onClick={() => removeTalent(idx)} className="text-red-900 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12}/></button>
+                                )}
+                             </div>
+                             <textarea 
+                                disabled={!isEditMode}
+                                value={talent.description}
+                                onChange={(e) => updateTalent(idx, 'description', e.target.value)}
+                                className="w-full bg-transparent text-xs text-gray-400 focus:outline-none focus:text-white resize-none h-12 custom-scrollbar disabled:text-gray-500"
+                                placeholder="Description..."
+                             />
+                        </div>
+                    ))}
+                    {isEditMode && (
+                        <button onClick={addTalent} className="border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex justify-center items-center h-full min-h-[80px] uppercase tracking-widest text-xs rounded">
+                            <Plus size={14} /> {t('addTalent')}
+                        </button>
+                    )}
+                </div>
+            </StatBlock>
+
         </div>
-      </StatBlock>
 
+        {/* Right Column: Vitals, Armour, Gear */}
+        <div className="space-y-6">
+             {/* Vitals & Condition */}
+            <StatBlock title={t('vitalsCondition')}>
+                <div className="space-y-6 text-sm">
+                    {/* Wounds & Fate */}
+                    <div className="grid gap-4">
+                        <div className="bg-black/30 p-3 rounded border border-white/5 flex justify-between items-center">
+                            <span className="text-xs uppercase text-red-400 flex items-center gap-2"><Heart size={14}/> {t('wounds')}</span>
+                            <div className="flex items-center gap-1">
+                                <input type="number" className="w-12 bg-transparent text-right font-bold text-2xl text-red-500 focus:outline-none p-0" 
+                                    value={character.current_wounds} onChange={(e) => updateField('current_wounds', parseInt(e.target.value))} />
+                                <span className="text-gray-600 text-xl font-bold">/</span>
+                                <input type="number" className="w-10 bg-transparent text-left font-bold text-lg text-red-900 focus:outline-none p-0" 
+                                    disabled={!isEditMode}
+                                    value={character.total_wounds} onChange={(e) => updateField('total_wounds', parseInt(e.target.value))} />
+                            </div>
+                        </div>
+                        <div className="bg-black/30 p-3 rounded border border-white/5 flex justify-between items-center">
+                            <span className="text-xs uppercase text-tarnished-gold flex items-center gap-2"><Shield size={14}/> {t('fate')}</span>
+                            <div className="flex items-center gap-1">
+                                <input type="number" className="w-12 bg-transparent text-right font-bold text-2xl text-tarnished-gold focus:outline-none p-0" 
+                                    value={character.current_fate} onChange={(e) => updateField('current_fate', parseInt(e.target.value))} />
+                                <span className="text-gray-600 text-xl font-bold">/</span>
+                                <input type="number" className="w-10 bg-transparent text-left font-bold text-lg text-yellow-900 focus:outline-none p-0" 
+                                    disabled={!isEditMode}
+                                    value={character.total_fate} onChange={(e) => updateField('total_fate', parseInt(e.target.value))} />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Secondary Vitals */}
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center bg-black/30 p-2 rounded">
+                            <div className="text-xs text-yellow-600 uppercase flex items-center gap-2"><Activity size={14}/> {t('fatigue')}</div>
+                            <input type="number" className="w-16 bg-transparent text-right font-bold text-xl text-yellow-600 focus:outline-none p-0" 
+                                value={character.fatigue} onChange={(e) => updateField('fatigue', parseInt(e.target.value))} />
+                        </div>
+                        <div className="flex justify-between items-center bg-black/30 p-2 rounded">
+                            <div className="text-xs text-purple-400 uppercase flex items-center gap-2"><Brain size={14}/> {t('insanity')}</div>
+                            <input type="number" className="w-16 bg-transparent text-right font-bold text-xl text-purple-400 focus:outline-none p-0" 
+                                value={character.insanity} onChange={(e) => updateField('insanity', parseInt(e.target.value))} />
+                        </div>
+                        <div className="flex justify-between items-center bg-black/30 p-2 rounded">
+                            <div className="text-xs text-green-900 uppercase flex items-center gap-2"><Skull size={14}/> {t('corruption')}</div>
+                            <input type="number" className="w-16 bg-transparent text-right font-bold text-xl text-green-900 focus:outline-none p-0" 
+                                value={character.corruption} onChange={(e) => updateField('corruption', parseInt(e.target.value))} />
+                        </div>
+                    </div>
+
+                    {/* Movement */}
+                    <div className="pt-4 border-t border-phosphor-dim/30">
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs uppercase text-blue-400">{t('movement')}</span>
+                            <input type="number" className="w-12 bg-black/30 border border-blue-900/50 text-right text-blue-400 p-1 focus:outline-none disabled:border-transparent disabled:text-gray-500"
+                                disabled={!isEditMode}
+                                value={character.movement} onChange={(e) => updateField('movement', parseInt(e.target.value))} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-center text-[10px] text-gray-500">
+                            {['move_half', 'move_full', 'move_charge', 'move_run'].map((modeKey, i) => {
+                                const mult = [1, 2, 3, 6][i];
+                                return (
+                                    <div key={modeKey} className="bg-black/40 p-1 rounded border border-white/5 flex justify-between px-2">
+                                        <div className="uppercase">{t(modeKey)}</div>
+                                        <div className="text-white font-bold">{character.movement * mult}m</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </StatBlock>
+
+            {/* Armour */}
+            <StatBlock title={t('armourConfig')}>
+                <div className="grid gap-2">
+                    {Object.entries(character.armour || {}).map(([loc, stats]) => (
+                        <div key={loc} className="flex items-center justify-between bg-black/40 p-2 rounded border border-white/5">
+                            <span className="text-xs uppercase w-20 text-gray-400">{loc}</span>
+                            <div className="flex gap-2 items-center">
+                                <div className="flex flex-col items-center">
+                                    <label className="text-[8px] text-gray-600 uppercase">AP</label>
+                                    <input 
+                                        type="number" 
+                                        disabled={!isEditMode}
+                                        value={stats.ap} 
+                                        onChange={(e) => updateNestedField('armour', loc, 'ap', parseInt(e.target.value))}
+                                        className="w-10 bg-black/50 text-center text-white border border-white/10 text-sm p-1 focus:outline-none disabled:border-transparent"
+                                    />
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <label className="text-[8px] text-gray-600 uppercase">Type</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="-"
+                                        disabled={!isEditMode}
+                                        value={stats.type} 
+                                        onChange={(e) => updateNestedField('armour', loc, 'type', e.target.value)}
+                                        className="w-20 bg-transparent text-xs text-gray-400 text-right focus:text-white focus:outline-none disabled:text-gray-600"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </StatBlock>
+
+            {/* Gear / Inventory */}
+            <StatBlock title={t('issuedEquipment')}>
+                <textarea 
+                    className="w-full h-48 bg-black/40 border border-phosphor-dim/30 p-2 text-sm text-phosphor-green font-mono focus:outline-none focus:border-phosphor-green resize-none custom-scrollbar disabled:border-transparent disabled:text-gray-400"
+                    placeholder="List additional gear, rations, and devotional items here..."
+                    disabled={!isEditMode}
+                    value={character.gear || ""}
+                    onChange={(e) => updateField('gear', e.target.value)}
+                />
+            </StatBlock>
+        </div>
+
+      </div>
     </div>
   );
 };

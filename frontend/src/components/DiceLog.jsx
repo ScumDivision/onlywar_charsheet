@@ -1,17 +1,26 @@
 import React, { useRef, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import clsx from 'clsx';
-import { History } from 'lucide-react';
+import { History, Trash2 } from 'lucide-react';
 
 const DiceLog = () => {
-  const { rollLog, t } = useGame();
+  const { rollLog, clearRollLog, t } = useGame();
   const bottomRef = useRef(null);
 
   return (
     <div className="bg-black/80 border-l border-phosphor-dim/30 h-full flex flex-col w-full md:w-80 fixed right-0 top-0 bottom-0 z-40 transform transition-transform translate-x-full md:translate-x-0 pt-20 pb-4 px-4 overflow-hidden">
         <div className="flex items-center gap-2 text-tarnished-gold mb-4 border-b border-phosphor-dim/30 pb-2">
             <History size={18} />
-            <h3 className="font-gothic uppercase tracking-wider">{t('voxLog')}</h3>
+            <h3 className="font-gothic uppercase tracking-wider flex-1">{t('voxLog')}</h3>
+            {rollLog.length > 0 && (
+                <button
+                    onClick={clearRollLog}
+                    title={t('clearLog')}
+                    className="text-red-900 hover:text-red-500 transition-colors"
+                >
+                    <Trash2 size={14} />
+                </button>
+            )}
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">

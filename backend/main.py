@@ -72,6 +72,10 @@ class Ship(Base):
 
     components: Mapped[list] = mapped_column(JSON, default=list)
     weapons: Mapped[list] = mapped_column(JSON, default=list)
+    manifest: Mapped[dict] = mapped_column(
+        JSON,
+        default=lambda: {"crew": [], "cargo": [], "prisoners": []},
+    )
     background: Mapped[str] = mapped_column(Text, default="")
     notes: Mapped[str] = mapped_column(Text, default="")
 
@@ -126,6 +130,9 @@ class CharacterModel(Base):
     talents: Mapped[list] = mapped_column(JSON, default=list)
     companions: Mapped[list] = mapped_column(JSON, default=list)
     log_entries: Mapped[list] = mapped_column(JSON, default=list)
+    npc_roster: Mapped[list] = mapped_column(JSON, default=list)
+    injuries: Mapped[list] = mapped_column(JSON, default=list)
+    dice_log: Mapped[list] = mapped_column(JSON, default=list)
     armour: Mapped[dict] = mapped_column(JSON, default=dict)
     gear: Mapped[str] = mapped_column(String, default="")
     xp: Mapped[dict] = mapped_column(
@@ -170,6 +177,9 @@ class CharacterBase(BaseModel):
     talents: list[dict[str, Any]] = []
     companions: list[dict[str, Any]] = []
     log_entries: list[dict[str, Any]] = []
+    npc_roster: list[dict[str, Any]] = []
+    injuries: list[dict[str, Any]] = []
+    dice_log: list[dict[str, Any]] = []
     armour: dict[str, Any] = {}
     gear: str = ""
     xp: dict[str, int] = {"current": 0, "spent": 0, "total": 0}
@@ -208,6 +218,7 @@ class ShipBase(BaseModel):
     space_total: int = 0
     components: list[dict[str, Any]] = []
     weapons: list[dict[str, Any]] = []
+    manifest: dict[str, Any] = {"crew": [], "cargo": [], "prisoners": []}
     background: str = ""
     notes: str = ""
 

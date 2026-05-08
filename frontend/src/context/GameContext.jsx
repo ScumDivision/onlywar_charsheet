@@ -34,6 +34,7 @@ const owDefault = () => ({
   current_fate: 1, total_fate: 1,
   fatigue: 0, insanity: 0, corruption: 0, movement: 3,
   skills: [], weapons: [], talents: [], companions: [], log_entries: [],
+  npc_roster: [], injuries: [], dice_log: [],
   armour: blankArmour(),
   gear: "",
   xp: { current: 0, spent: 0, total: 0 },
@@ -55,6 +56,7 @@ const rtDefault = () => ({
   current_fate: 3, total_fate: 3,
   fatigue: 0, insanity: 0, corruption: 0, movement: 3,
   skills: [], weapons: [], talents: [], companions: [], log_entries: [],
+  npc_roster: [], injuries: [], dice_log: [],
   armour: blankArmour(),
   gear: "",
   xp: { current: 0, spent: 0, total: 0 },
@@ -62,6 +64,8 @@ const rtDefault = () => ({
   ship_id: null,
   has_portrait: false,
 });
+
+const blankManifest = () => ({ crew: [], cargo: [], prisoners: [] });
 
 const blankShip = () => ({
   name: "Unnamed Voidship",
@@ -74,6 +78,7 @@ const blankShip = () => ({
   power_used: 0, power_total: 0,
   space_used: 0, space_total: 0,
   components: [], weapons: [],
+  manifest: blankManifest(),
   background: "", notes: "",
 });
 
@@ -262,6 +267,55 @@ const translations = {
     logDatePlaceholder: "e.g. 0.342.M42",
     logTextPlaceholder: "Encrypted log entry — record events, contracts, debts, names...",
     noLogEntries: "Log empty. Begin a new entry to commence the dataslate record.",
+
+    // NPC roster
+    npcRoster: "Persons of Note",
+    addNpc: "Add Entry",
+    npcName: "Name",
+    npcRole: "Role / Faction",
+    npcDisposition: "Disposition",
+    npcLastSeen: "Last Seen",
+    npcLastSeenPlaceholder: "Footfall, M42 423 — Drinking after the deal",
+    npcNotesPlaceholder: "Reputation, debts owed, intel, secrets...",
+    npcSearch: "Search names, factions, notes...",
+    noNpcs: "No persons of note recorded.",
+    disp_allied: "Allied",
+    disp_friend: "Friendly",
+    disp_neutral: "Neutral",
+    disp_owed: "Owes Us",
+    disp_owe: "We Owe",
+    disp_rival: "Rival",
+    disp_enemy: "Enemy",
+    disp_dead: "Dead",
+    disp_unknown: "Unknown",
+
+    // Injuries / Critical damage
+    injuries: "Injuries & Trauma",
+    addInjury: "Log Injury",
+    injuryDate: "Sustained",
+    injuryDescPlaceholder: "Lost left eye to a power sword strike...",
+    injuryEffectPlaceholder: "Effect: -10 Per until augmetic. Charm checks suffer −5.",
+    injuryHealing: "Healing",
+    injuryHealingPlaceholder: "Permanent / 4 weeks / Awaiting augmetic",
+    injuryHealed: "Healed",
+    noInjuries: "No injuries logged. Long may it stay so.",
+
+    // Manifest (ship)
+    manifest: "Ship Manifest",
+    manifestCrew: "Crew & Guests",
+    manifestCargo: "Cargo & Loot",
+    manifestPrisoners: "Prisoners & Detained",
+    addCrew: "Add Person",
+    addCargo: "Add Item",
+    addPrisoner: "Add Prisoner",
+    manifestNamePlaceholder: "Name / Designation",
+    manifestStatusPlaceholder: "Status (Active / Cryo / In transit...)",
+    manifestLocationPlaceholder: "Location aboard",
+    manifestNotesPlaceholder: "Notes",
+    noManifest: "Empty.",
+
+    // Vox-log persistence
+    clearLog: "Clear Vox-Log",
   },
   de: {
     // UI
@@ -447,6 +501,55 @@ const translations = {
     logDatePlaceholder: "z.B. 0.342.M42",
     logTextPlaceholder: "Verschlüsselter Logeintrag — Ereignisse, Verträge, Schulden, Namen...",
     noLogEntries: "Logbuch leer. Beginne einen neuen Eintrag um die Datenakte zu eröffnen.",
+
+    // NPC-Akte
+    npcRoster: "Personenakte",
+    addNpc: "Person Hinzufügen",
+    npcName: "Name",
+    npcRole: "Rolle / Fraktion",
+    npcDisposition: "Verhältnis",
+    npcLastSeen: "Zuletzt gesehen",
+    npcLastSeenPlaceholder: "Footfall, M42 423 — Beim Trinken nach dem Deal",
+    npcNotesPlaceholder: "Ruf, Schulden, Geheimnisse, Informationen...",
+    npcSearch: "Namen, Fraktionen, Notizen durchsuchen...",
+    noNpcs: "Keine Personen verzeichnet.",
+    disp_allied: "Verbündet",
+    disp_friend: "Freundlich",
+    disp_neutral: "Neutral",
+    disp_owed: "Schuldet uns",
+    disp_owe: "Wir schulden",
+    disp_rival: "Rivale",
+    disp_enemy: "Feind",
+    disp_dead: "Tot",
+    disp_unknown: "Unbekannt",
+
+    // Verletzungen
+    injuries: "Verletzungen & Trauma",
+    addInjury: "Verletzung Erfassen",
+    injuryDate: "Erlitten",
+    injuryDescPlaceholder: "Linkes Auge an Energiehiebklinge verloren...",
+    injuryEffectPlaceholder: "Effekt: −10 WA bis Augmetik. Charme-Tests −5.",
+    injuryHealing: "Heilung",
+    injuryHealingPlaceholder: "Dauerhaft / 4 Wochen / Wartet auf Augmetik",
+    injuryHealed: "Verheilt",
+    noInjuries: "Keine Verletzungen verzeichnet. Möge es so bleiben.",
+
+    // Manifest (Schiff)
+    manifest: "Schiffsmanifest",
+    manifestCrew: "Mannschaft & Gäste",
+    manifestCargo: "Fracht & Beute",
+    manifestPrisoners: "Gefangene & Inhaftierte",
+    addCrew: "Person Hinzufügen",
+    addCargo: "Eintrag Hinzufügen",
+    addPrisoner: "Gefangener Hinzufügen",
+    manifestNamePlaceholder: "Name / Bezeichnung",
+    manifestStatusPlaceholder: "Status (Aktiv / Stasis / Unterwegs...)",
+    manifestLocationPlaceholder: "Standort an Bord",
+    manifestNotesPlaceholder: "Notizen",
+    noManifest: "Leer.",
+
+    // Vox-Log Persistenz
+    clearLog: "Vox-Log Leeren",
   }
 };
 
@@ -490,7 +593,20 @@ export const GameProvider = ({ children }) => {
   }, []);
 
   const addToLog = useCallback((entry) => {
-      setRollLog(prev => [{...entry, id: Date.now()}, ...prev].slice(0, 50));
+      const stamped = { ...entry, id: Date.now() };
+      // Live session log — bounded for UI performance
+      setRollLog(prev => [stamped, ...prev].slice(0, 50));
+      // Persistent log on the character — survives reloads, capped tighter
+      // than session log so the saved JSON doesn't bloat over years.
+      setCharacter(prev => ({
+          ...prev,
+          dice_log: [stamped, ...(prev.dice_log || [])].slice(0, 100),
+      }));
+  }, []);
+
+  const clearRollLog = useCallback(() => {
+      setRollLog([]);
+      setCharacter(prev => ({ ...prev, dice_log: [] }));
   }, []);
 
   const fetchAllCharacters = async () => {
@@ -518,6 +634,9 @@ export const GameProvider = ({ children }) => {
       if (!loaded.skills) loaded.skills = [];
       if (!Array.isArray(loaded.companions)) loaded.companions = [];
       if (!Array.isArray(loaded.log_entries)) loaded.log_entries = [];
+      if (!Array.isArray(loaded.npc_roster)) loaded.npc_roster = [];
+      if (!Array.isArray(loaded.injuries)) loaded.injuries = [];
+      if (!Array.isArray(loaded.dice_log)) loaded.dice_log = [];
       if (!loaded.armour || Object.keys(loaded.armour).length === 0) {
           loaded.armour = blankArmour();
       }
@@ -532,6 +651,9 @@ export const GameProvider = ({ children }) => {
       const res = await axios.get(`${API}/characters/${id}`);
       const loaded = normalizeLoadedCharacter(res.data);
       setCharacter(loaded);
+      // Hydrate the session vox-log from the character's persistent record
+      // so rolls from previous sessions are visible right after load.
+      setRollLog((loaded.dice_log || []).slice(0, 50));
       setPortraitVersion(Date.now());
       if (loaded.ship_id) {
           await loadShip(loaded.ship_id);
@@ -582,6 +704,7 @@ export const GameProvider = ({ children }) => {
   const createNewCharacter = (system = SYSTEMS.OW) => {
     const blank = system === SYSTEMS.RT ? rtDefault() : owDefault();
     setCharacter(blank);
+    setRollLog([]);
     setShip(null);
     setPortraitVersion(Date.now());
     triggerFeedback('success', t('new') + ' ' + t('success'));
@@ -640,10 +763,25 @@ export const GameProvider = ({ children }) => {
   //  Ship CRUD
   // -----------------------------------------------------------
 
+  const normalizeLoadedShip = (loaded) => {
+      if (!loaded.manifest || typeof loaded.manifest !== 'object') {
+          loaded.manifest = blankManifest();
+      } else {
+          loaded.manifest = {
+              crew: Array.isArray(loaded.manifest.crew) ? loaded.manifest.crew : [],
+              cargo: Array.isArray(loaded.manifest.cargo) ? loaded.manifest.cargo : [],
+              prisoners: Array.isArray(loaded.manifest.prisoners) ? loaded.manifest.prisoners : [],
+          };
+      }
+      if (!Array.isArray(loaded.components)) loaded.components = [];
+      if (!Array.isArray(loaded.weapons)) loaded.weapons = [];
+      return loaded;
+  };
+
   const loadShip = async (id) => {
       try {
           const res = await axios.get(`${API}/ships/${id}`);
-          setShip(res.data);
+          setShip(normalizeLoadedShip(res.data));
       } catch (error) {
           console.error("Failed to load ship", error);
           triggerFeedback('failure', 'Ship Load Failed');
@@ -660,7 +798,7 @@ export const GameProvider = ({ children }) => {
           } else {
               res = await axios.post(`${API}/ships/`, payload);
           }
-          setShip(res.data);
+          setShip(normalizeLoadedShip(res.data));
           // Auto-link the new ship to the current character if unlinked
           if (!id && character.id && !character.ship_id) {
               const updated = { ...character, ship_id: res.data.id };
@@ -774,6 +912,7 @@ export const GameProvider = ({ children }) => {
         feedback,
         rollLog,
         addToLog,
+        clearRollLog,
         triggerFeedback,
         loadCharacter,
         saveCharacter,

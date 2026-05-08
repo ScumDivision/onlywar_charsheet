@@ -3,7 +3,7 @@ import { useGame } from '../context/GameContext';
 import {
     Anchor, Save, Trash2, FolderOpen, FilePlus, Plus,
     Shield, Zap, Users, Compass, Battery, Box, ScrollText,
-    Edit3, Lock, Unlink2, X
+    Edit3, Lock, Unlink2, X, Package
 } from 'lucide-react';
 import clsx from 'clsx';
 import { toInt } from '../utils';
@@ -390,6 +390,108 @@ const ShipSheet = ({ onClose }) => {
                         <Plus size={14}/> {t('addShipWeapon')}
                     </button>
                 )}
+            </StatBlock>
+
+            {/* Manifest — three sub-lists for crew/guests, cargo/loot, prisoners */}
+            <StatBlock title={t('manifest')} icon={Package}>
+                {(() => {
+                    const manifest = ship.manifest || { crew: [], cargo: [], prisoners: [] };
+                    const updateManifest = (slot, items) => setShip(prev => ({
+                        ...prev,
+                        manifest: { ...(prev.manifest || { crew: [], cargo: [], prisoners: [] }), [slot]: items },
+                    }));
+                    const addManifestEntry = (slot) => updateManifest(slot, [
+                        { id: Date.now(), name: '', status: '', location: '', notes: '' },
+                        ...(manifest[slot] || []),
+                    ]);
+                    const removeManifestEntry = (slot, id) =>
+                        updateManifest(slot, (manifest[slot] || []).filter(e => e.id !== id));
+                    const updateManifestEntry = (slot, id, field, value) =>
+                        updateManifest(slot, (manifest[slot] || []).map(e => e.id === id ? { ...e, [field]: value } : e));
+
+                    const slots = [
+                        { key: 'crew',      label: t('manifestCrew'),      addLabel: t('addCrew'),      icon: Users,     accent: 'text-phosphor-green' },
+                        { key: 'cargo',     label: t('manifestCargo'),     addLabel: t('addCargo'),     icon: Box,       accent: 'text-tarnished-gold' },
+                        { key: 'prisoners', label: t('manifestPrisoners'), addLabel: t('addPrisoner'), icon: Lock,      accent: 'text-red-400' },
+                    ];
+
+                    return (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                            {slots.map(({ key, label, addLabel, icon: SlotIcon, accent }) => {
+                                const items = manifest[key] || [];
+                                return (
+                                    <div key={key} className="bg-black/30 border border-phosphor-dim/30 p-2 flex flex-col gap-2">
+                                        <div className={clsx("flex items-center gap-2 text-[11px] uppercase tracking-wider font-bold border-b border-white/5 pb-1", accent)}>
+                                            <SlotIcon size={12} />
+                                            <span className="flex-1">{label}</span>
+                                            <span className="text-[10px] text-gray-600">{items.length}</span>
+                                        </div>
+                                        <div className="space-y-1.5 min-h-[2rem]">
+                                            {items.length === 0 && (
+                                                <div className="text-center text-gray-700 italic text-xs py-2">{t('noManifest')}</div>
+                                            )}
+                                            {items.map(item => (
+                                                <div key={item.id} className="bg-black/40 border border-white/5 p-1.5 group">
+                                                    <div className="flex items-center gap-1 mb-1">
+                                                        <input
+                                                            type="text"
+                                                            disabled={!isEditMode}
+                                                            value={item.name ?? ''}
+                                                            onChange={(e) => updateManifestEntry(key, item.id, 'name', e.target.value)}
+                                                            placeholder={t('manifestNamePlaceholder')}
+                                                            className={clsx("flex-1 bg-transparent text-sm font-bold focus:text-white focus:outline-none placeholder-gray-700", accent)}
+                                                        />
+                                                        {isEditMode && (
+                                                            <button
+                                                                onClick={() => removeManifestEntry(key, item.id)}
+                                                                className="text-red-900 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                title={t('delete')}
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        disabled={!isEditMode}
+                                                        value={item.status ?? ''}
+                                                        onChange={(e) => updateManifestEntry(key, item.id, 'status', e.target.value)}
+                                                        placeholder={t('manifestStatusPlaceholder')}
+                                                        className="w-full bg-transparent text-[11px] text-tarnished-gold/80 focus:text-white focus:outline-none placeholder-gray-700"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        disabled={!isEditMode}
+                                                        value={item.location ?? ''}
+                                                        onChange={(e) => updateManifestEntry(key, item.id, 'location', e.target.value)}
+                                                        placeholder={t('manifestLocationPlaceholder')}
+                                                        className="w-full bg-transparent text-[11px] text-blue-300/80 focus:text-white focus:outline-none placeholder-gray-700"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        disabled={!isEditMode}
+                                                        value={item.notes ?? ''}
+                                                        onChange={(e) => updateManifestEntry(key, item.id, 'notes', e.target.value)}
+                                                        placeholder={t('manifestNotesPlaceholder')}
+                                                        className="w-full bg-transparent text-[11px] text-gray-400 focus:text-white focus:outline-none placeholder-gray-700"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {isEditMode && (
+                                            <button
+                                                onClick={() => addManifestEntry(key)}
+                                                className="w-full py-1 border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex justify-center items-center gap-2 uppercase tracking-widest text-[10px]"
+                                            >
+                                                <Plus size={12} /> {addLabel}
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
             </StatBlock>
 
             {/* Background + Notes */}

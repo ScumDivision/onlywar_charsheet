@@ -3,7 +3,7 @@ import { useGame, SYSTEMS } from '../context/GameContext';
 import DiceRoller from './DiceRoller';
 import Portrait from './Portrait';
 import ShipSheet from './ShipSheet';
-import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe, Crown, Anchor, Coins, ChevronDown, PawPrint, ScrollText } from 'lucide-react';
+import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe, Crown, Anchor, Coins, ChevronDown, PawPrint, ScrollText, Users, Bandage, Search, CheckSquare, Square } from 'lucide-react';
 import clsx from 'clsx';
 import { toInt } from '../utils';
 
@@ -29,6 +29,7 @@ const CharacterSheet = () => {
   // Per-companion collapse state — keyed by current index. Re-keys on add/remove,
   // which is fine: the panel just defaults to expanded again.
   const [collapsedCompanions, setCollapsedCompanions] = useState(() => new Set());
+  const [npcSearch, setNpcSearch] = useState('');
 
   const isRT = character?.system === SYSTEMS.RT;
 
@@ -154,6 +155,34 @@ const CharacterSheet = () => {
   const updateLogEntry = (id, field, value) => setCharacter(prev => ({
       ...prev,
       log_entries: (prev.log_entries || []).map(e => e.id === id ? { ...e, [field]: value } : e),
+  }));
+
+  // --- NPC roster ---
+  const addNpc = () => setCharacter(prev => ({
+      ...prev,
+      npc_roster: [{ id: Date.now(), name: "", role: "", disposition: "neutral", last_seen: "", notes: "" }, ...(prev.npc_roster || [])],
+  }));
+  const removeNpc = (id) => setCharacter(prev => ({
+      ...prev,
+      npc_roster: (prev.npc_roster || []).filter(n => n.id !== id),
+  }));
+  const updateNpc = (id, field, value) => setCharacter(prev => ({
+      ...prev,
+      npc_roster: (prev.npc_roster || []).map(n => n.id === id ? { ...n, [field]: value } : n),
+  }));
+
+  // --- Injuries ---
+  const addInjury = () => setCharacter(prev => ({
+      ...prev,
+      injuries: [{ id: Date.now(), date: "", description: "", effect: "", healing: "", healed: false }, ...(prev.injuries || [])],
+  }));
+  const removeInjury = (id) => setCharacter(prev => ({
+      ...prev,
+      injuries: (prev.injuries || []).filter(n => n.id !== id),
+  }));
+  const updateInjury = (id, field, value) => setCharacter(prev => ({
+      ...prev,
+      injuries: (prev.injuries || []).map(n => n.id === id ? { ...n, [field]: value } : n),
   }));
 
 
@@ -911,6 +940,93 @@ const CharacterSheet = () => {
                 </div>
             </StatBlock>
 
+            {/* Injuries & Trauma */}
+            <StatBlock title={<span className="flex items-center gap-2"><Bandage size={12} /> {t('injuries')}</span>}>
+                <div className="space-y-2">
+                    {(character.injuries || []).length === 0 && (
+                        <div className="text-center text-gray-600 italic text-sm py-2">{t('noInjuries')}</div>
+                    )}
+                    {(character.injuries || []).map(inj => (
+                        <div
+                            key={inj.id}
+                            className={clsx(
+                                "bg-black/30 border border-white/5 hover:border-phosphor-dim/40 transition-colors p-2 group",
+                                inj.healed && "opacity-60"
+                            )}
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <button
+                                    onClick={() => updateInjury(inj.id, 'healed', !inj.healed)}
+                                    disabled={!isEditMode}
+                                    className={clsx(
+                                        "transition-colors",
+                                        inj.healed ? "text-phosphor-green" : "text-gray-600 hover:text-phosphor-dim",
+                                        !isEditMode && "cursor-default"
+                                    )}
+                                    title={t('injuryHealed')}
+                                >
+                                    {inj.healed ? <CheckSquare size={14} /> : <Square size={14} />}
+                                </button>
+                                <input
+                                    type="text"
+                                    disabled={!isEditMode}
+                                    value={inj.date ?? ''}
+                                    onChange={(e) => updateInjury(inj.id, 'date', e.target.value)}
+                                    placeholder={t('logDatePlaceholder')}
+                                    className="w-32 bg-transparent text-tarnished-gold text-xs font-mono focus:text-white focus:outline-none disabled:text-tarnished-gold/70 placeholder-gray-700"
+                                />
+                                <input
+                                    type="text"
+                                    disabled={!isEditMode}
+                                    value={inj.description ?? ''}
+                                    onChange={(e) => updateInjury(inj.id, 'description', e.target.value)}
+                                    placeholder={t('injuryDescPlaceholder')}
+                                    className={clsx(
+                                        "flex-1 bg-transparent text-sm focus:text-white focus:outline-none placeholder-gray-700",
+                                        inj.healed ? "text-gray-500 line-through" : "text-red-300"
+                                    )}
+                                />
+                                {isEditMode && (
+                                    <button
+                                        onClick={() => removeInjury(inj.id)}
+                                        className="text-red-900 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                        title={t('delete')}
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 ml-6">
+                                <input
+                                    type="text"
+                                    disabled={!isEditMode}
+                                    value={inj.effect ?? ''}
+                                    onChange={(e) => updateInjury(inj.id, 'effect', e.target.value)}
+                                    placeholder={t('injuryEffectPlaceholder')}
+                                    className="bg-black/40 border border-white/10 px-2 py-1 text-xs text-phosphor-dim focus:text-white focus:border-phosphor-green focus:outline-none disabled:border-transparent disabled:text-gray-500 placeholder-gray-700"
+                                />
+                                <input
+                                    type="text"
+                                    disabled={!isEditMode}
+                                    value={inj.healing ?? ''}
+                                    onChange={(e) => updateInjury(inj.id, 'healing', e.target.value)}
+                                    placeholder={t('injuryHealingPlaceholder')}
+                                    className="bg-black/40 border border-white/10 px-2 py-1 text-xs text-blue-300 focus:text-white focus:border-phosphor-green focus:outline-none disabled:border-transparent disabled:text-blue-300/70 placeholder-gray-700"
+                                />
+                            </div>
+                        </div>
+                    ))}
+                    {isEditMode && (
+                        <button
+                            onClick={addInjury}
+                            className="w-full py-1 border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-red-400 hover:border-red-700 hover:bg-red-900/10 transition-all flex justify-center items-center gap-2 uppercase tracking-widest text-[10px]"
+                        >
+                            <Plus size={12} /> {t('addInjury')}
+                        </button>
+                    )}
+                </div>
+            </StatBlock>
+
             {/* Gear / Inventory */}
             <StatBlock title={t('issuedEquipment')}>
                 <textarea 
@@ -979,6 +1095,124 @@ const CharacterSheet = () => {
                   ))
               }
           </div>
+      </StatBlock>
+
+      {/* NPC roster — full width, with search filter */}
+      <StatBlock title={<span className="flex items-center gap-2"><Users size={12} /> {t('npcRoster')}</span>}>
+          {(() => {
+              const dispOptions = [
+                  { value: 'allied',   key: 'disp_allied',   color: 'text-phosphor-green' },
+                  { value: 'friend',   key: 'disp_friend',   color: 'text-green-400' },
+                  { value: 'neutral',  key: 'disp_neutral',  color: 'text-gray-400' },
+                  { value: 'owed',     key: 'disp_owed',     color: 'text-tarnished-gold' },
+                  { value: 'owe',      key: 'disp_owe',      color: 'text-amber-700' },
+                  { value: 'rival',    key: 'disp_rival',    color: 'text-orange-400' },
+                  { value: 'enemy',    key: 'disp_enemy',    color: 'text-red-500' },
+                  { value: 'dead',     key: 'disp_dead',     color: 'text-gray-600' },
+                  { value: 'unknown',  key: 'disp_unknown',  color: 'text-purple-400' },
+              ];
+              const q = npcSearch.trim().toLowerCase();
+              const filtered = (character.npc_roster || []).filter(n => {
+                  if (!q) return true;
+                  return [n.name, n.role, n.last_seen, n.notes].some(
+                      f => (f || '').toLowerCase().includes(q)
+                  );
+              });
+              return (
+                  <>
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <div className="relative flex-1 min-w-[200px]">
+                              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-600" />
+                              <input
+                                  type="text"
+                                  value={npcSearch}
+                                  onChange={(e) => setNpcSearch(e.target.value)}
+                                  placeholder={t('npcSearch')}
+                                  className="w-full bg-black/40 border border-white/10 pl-7 pr-2 py-1 text-xs text-phosphor-dim focus:text-white focus:border-phosphor-green focus:outline-none placeholder-gray-700"
+                              />
+                          </div>
+                          <span className="text-[10px] text-gray-600 tracking-wider uppercase">
+                              {filtered.length}/{(character.npc_roster || []).length}
+                          </span>
+                          {isEditMode && (
+                              <button
+                                  onClick={addNpc}
+                                  className="px-3 py-1 border border-dashed border-phosphor-dim/40 text-phosphor-dim/80 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex items-center gap-2 uppercase tracking-widest text-xs"
+                              >
+                                  <Plus size={14} /> {t('addNpc')}
+                              </button>
+                          )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {filtered.length === 0 && (
+                              <div className="md:col-span-2 text-center text-gray-600 italic text-sm py-4">{t('noNpcs')}</div>
+                          )}
+                          {filtered.map(npc => {
+                              const dispMeta = dispOptions.find(d => d.value === npc.disposition) || dispOptions[2];
+                              return (
+                                  <div key={npc.id} className="bg-black/30 border border-white/5 hover:border-phosphor-dim/40 transition-colors p-2 group flex flex-col gap-1.5">
+                                      <div className="flex items-center gap-2">
+                                          <input
+                                              type="text"
+                                              disabled={!isEditMode}
+                                              value={npc.name ?? ''}
+                                              onChange={(e) => updateNpc(npc.id, 'name', e.target.value)}
+                                              placeholder={t('npcName')}
+                                              className="flex-1 bg-transparent text-phosphor-green font-bold text-sm focus:text-white focus:outline-none disabled:text-gray-300 placeholder-gray-700"
+                                          />
+                                          <select
+                                              disabled={!isEditMode}
+                                              value={npc.disposition || 'neutral'}
+                                              onChange={(e) => updateNpc(npc.id, 'disposition', e.target.value)}
+                                              className={clsx("bg-black/40 border border-white/10 px-1 py-0.5 text-[10px] uppercase tracking-wider focus:outline-none focus:border-phosphor-green disabled:appearance-none disabled:bg-transparent disabled:border-transparent", dispMeta.color)}
+                                          >
+                                              {dispOptions.map(d => (
+                                                  <option key={d.value} value={d.value} className="text-phosphor-dim bg-imperial-dark">
+                                                      {t(d.key)}
+                                                  </option>
+                                              ))}
+                                          </select>
+                                          {isEditMode && (
+                                              <button
+                                                  onClick={() => removeNpc(npc.id)}
+                                                  className="text-red-900 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                                  title={t('delete')}
+                                              >
+                                                  <Trash2 size={12} />
+                                              </button>
+                                          )}
+                                      </div>
+                                      <input
+                                          type="text"
+                                          disabled={!isEditMode}
+                                          value={npc.role ?? ''}
+                                          onChange={(e) => updateNpc(npc.id, 'role', e.target.value)}
+                                          placeholder={t('npcRole')}
+                                          className="bg-transparent text-xs text-tarnished-gold focus:text-white focus:outline-none disabled:text-tarnished-gold/70 placeholder-gray-700"
+                                      />
+                                      <input
+                                          type="text"
+                                          disabled={!isEditMode}
+                                          value={npc.last_seen ?? ''}
+                                          onChange={(e) => updateNpc(npc.id, 'last_seen', e.target.value)}
+                                          placeholder={t('npcLastSeenPlaceholder')}
+                                          className="bg-transparent text-xs text-blue-300 focus:text-white focus:outline-none disabled:text-blue-300/70 placeholder-gray-700"
+                                      />
+                                      <textarea
+                                          disabled={!isEditMode}
+                                          value={npc.notes ?? ''}
+                                          onChange={(e) => updateNpc(npc.id, 'notes', e.target.value)}
+                                          placeholder={t('npcNotesPlaceholder')}
+                                          className="w-full h-12 bg-black/40 border border-white/10 p-1 text-xs text-phosphor-dim focus:text-white focus:border-phosphor-green focus:outline-none resize-y custom-scrollbar disabled:border-transparent disabled:text-gray-500 placeholder-gray-700"
+                                      />
+                                  </div>
+                              );
+                          })}
+                      </div>
+                  </>
+              );
+          })()}
       </StatBlock>
       </>
       )}

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Literal, Optional
 
 import smartcrop
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import (
@@ -492,3 +494,10 @@ def delete_portrait(character_id: int, db: Session = Depends(get_db)):
     db.delete(img)
     db.commit()
     return {"ok": True}
+
+
+# Serve the built frontend (vite dist) at the root if it exists.
+# Mounted last so the API routes above always take precedence.
+DIST_DIR = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if DIST_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=str(DIST_DIR), html=True), name="frontend")

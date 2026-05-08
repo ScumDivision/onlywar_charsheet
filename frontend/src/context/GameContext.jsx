@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 
-const API = 'http://localhost:8000';
+// In production the backend serves the built frontend, so axios uses
+// relative paths (same-origin). For local dev `npm run dev` reads
+// VITE_API_URL from .env.development which points at the dev backend.
+const API = import.meta.env.VITE_API_URL ?? '';
 
 const GameContext = createContext();
 

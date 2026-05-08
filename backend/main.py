@@ -124,6 +124,7 @@ class CharacterModel(Base):
     skills: Mapped[list] = mapped_column(JSON, default=list)
     weapons: Mapped[list] = mapped_column(JSON, default=list)
     talents: Mapped[list] = mapped_column(JSON, default=list)
+    companions: Mapped[list] = mapped_column(JSON, default=list)
     armour: Mapped[dict] = mapped_column(JSON, default=dict)
     gear: Mapped[str] = mapped_column(String, default="")
     xp: Mapped[dict] = mapped_column(
@@ -166,6 +167,7 @@ class CharacterBase(BaseModel):
     skills: list[dict[str, Any]] = []
     weapons: list[dict[str, Any]] = []
     talents: list[dict[str, Any]] = []
+    companions: list[dict[str, Any]] = []
     armour: dict[str, Any] = {}
     gear: str = ""
     xp: dict[str, int] = {"current": 0, "spent": 0, "total": 0}

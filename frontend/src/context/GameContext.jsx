@@ -33,7 +33,7 @@ const owDefault = () => ({
   current_wounds: 10, total_wounds: 10,
   current_fate: 1, total_fate: 1,
   fatigue: 0, insanity: 0, corruption: 0, movement: 3,
-  skills: [], weapons: [], talents: [],
+  skills: [], weapons: [], talents: [], companions: [],
   armour: blankArmour(),
   gear: "",
   xp: { current: 0, spent: 0, total: 0 },
@@ -54,7 +54,7 @@ const rtDefault = () => ({
   current_wounds: 11, total_wounds: 11,
   current_fate: 3, total_fate: 3,
   fatigue: 0, insanity: 0, corruption: 0, movement: 3,
-  skills: [], weapons: [], talents: [],
+  skills: [], weapons: [], talents: [], companions: [],
   armour: blankArmour(),
   gear: "",
   xp: { current: 0, spent: 0, total: 0 },
@@ -244,6 +244,16 @@ const translations = {
     voxIdle: "Awaiting data stream...",
     rollLabel: "Roll",
     vs: "vs",
+
+    // Companions
+    companions: "Companions",
+    addCompanion: "Add Companion",
+    compName: "Designation",
+    compType: "Type / Species",
+    compMove: "Move",
+    compNotesPlaceholder: "Traits, abilities, behavior...",
+    expand: "Expand",
+    collapse: "Collapse",
   },
   de: {
     // UI
@@ -411,6 +421,16 @@ const translations = {
     voxIdle: "Warte auf Datenstrom...",
     rollLabel: "Wurf",
     vs: "gegen",
+
+    // Begleiter
+    companions: "Begleiter",
+    addCompanion: "Begleiter Hinzufügen",
+    compName: "Bezeichnung",
+    compType: "Typ / Spezies",
+    compMove: "Beweg.",
+    compNotesPlaceholder: "Eigenschaften, Fähigkeiten, Verhalten...",
+    expand: "Aufklappen",
+    collapse: "Einklappen",
   }
 };
 
@@ -480,6 +500,7 @@ export const GameProvider = ({ children }) => {
       if (!loaded.weapons) loaded.weapons = [];
       if (!loaded.talents) loaded.talents = [];
       if (!loaded.skills) loaded.skills = [];
+      if (!Array.isArray(loaded.companions)) loaded.companions = [];
       if (!loaded.armour || Object.keys(loaded.armour).length === 0) {
           loaded.armour = blankArmour();
       }

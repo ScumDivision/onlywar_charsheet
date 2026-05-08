@@ -3,7 +3,7 @@ import { useGame, SYSTEMS } from '../context/GameContext';
 import DiceRoller from './DiceRoller';
 import Portrait from './Portrait';
 import ShipSheet from './ShipSheet';
-import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe, Crown, Anchor, Coins } from 'lucide-react';
+import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe, Crown, Anchor, Coins, ChevronDown, PawPrint } from 'lucide-react';
 import clsx from 'clsx';
 import { toInt } from '../utils';
 
@@ -26,6 +26,9 @@ const CharacterSheet = () => {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showBridge, setShowBridge] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  // Per-companion collapse state — keyed by current index. Re-keys on add/remove,
+  // which is fine: the panel just defaults to expanded again.
+  const [collapsedCompanions, setCollapsedCompanions] = useState(() => new Set());
 
   const isRT = character?.system === SYSTEMS.RT;
 
@@ -89,6 +92,54 @@ const CharacterSheet = () => {
       const newTalents = [...character.talents];
       newTalents[index] = { ...newTalents[index], [field]: value };
       setCharacter(prev => ({ ...prev, talents: newTalents }));
+  };
+
+  // --- Companions Logic ---
+  const blankCompanion = () => ({
+      name: "New Companion", type: "",
+      ws: 25, bs: 25, s: 25, t: 25, ag: 25, int_: 25, per: 25, wp: 25, fel: 25,
+      current_wounds: 5, total_wounds: 5, movement: 3,
+      weapons: [],
+      notes: "",
+  });
+  const addCompanion = () => setCharacter(prev => ({
+      ...prev,
+      companions: [...(prev.companions || []), blankCompanion()],
+  }));
+  const removeCompanion = (index) => setCharacter(prev => ({
+      ...prev,
+      companions: (prev.companions || []).filter((_, i) => i !== index),
+  }));
+  const updateCompanion = (index, field, value) => {
+      const list = [...(character.companions || [])];
+      list[index] = { ...list[index], [field]: value };
+      setCharacter(prev => ({ ...prev, companions: list }));
+  };
+  const addCompanionWeapon = (cIdx) => {
+      const list = [...(character.companions || [])];
+      const weapons = [...(list[cIdx].weapons || []), { name: "", dmg: "1d10", type: "I", pen: 0, special: "" }];
+      list[cIdx] = { ...list[cIdx], weapons };
+      setCharacter(prev => ({ ...prev, companions: list }));
+  };
+  const removeCompanionWeapon = (cIdx, wIdx) => {
+      const list = [...(character.companions || [])];
+      const weapons = (list[cIdx].weapons || []).filter((_, i) => i !== wIdx);
+      list[cIdx] = { ...list[cIdx], weapons };
+      setCharacter(prev => ({ ...prev, companions: list }));
+  };
+  const updateCompanionWeapon = (cIdx, wIdx, field, value) => {
+      const list = [...(character.companions || [])];
+      const weapons = [...(list[cIdx].weapons || [])];
+      weapons[wIdx] = { ...weapons[wIdx], [field]: value };
+      list[cIdx] = { ...list[cIdx], weapons };
+      setCharacter(prev => ({ ...prev, companions: list }));
+  };
+  const toggleCompanionCollapsed = (idx) => {
+      setCollapsedCompanions(prev => {
+          const next = new Set(prev);
+          if (next.has(idx)) next.delete(idx); else next.add(idx);
+          return next;
+      });
   };
 
 
@@ -418,65 +469,87 @@ const CharacterSheet = () => {
 
              {/* Weapons */}
             <StatBlock title={t('weaponsAuth')}>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-phosphor-dim border-collapse">
-                        <thead>
-                            <tr className="border-b border-white/10 text-[10px] uppercase text-tarnished-gold">
-                                <th className="p-2">{t('w_name')}</th>
-                                <th className="p-2">{t('w_class')}</th>
-                                <th className="p-2">{t('w_range')}</th>
-                                <th className="p-2">{t('w_rof')}</th>
-                                <th className="p-2">{t('w_dmg')}</th>
-                                <th className="p-2">{t('w_type')}</th>
-                                <th className="p-2">{t('w_pen')}</th>
-                                <th className="p-2">{t('w_clip')}</th>
-                                <th className="p-2">{t('w_rld')}</th>
-                                <th className="p-2">{t('w_special')}</th>
-                                <th className="p-2 text-center">{t('w_test')}</th>
-                                <th className="p-2 text-center">{t('w_dmg')}</th>
-                                {isEditMode && <th className="p-2"></th>}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {character.weapons?.map((wpn, idx) => (
-                                <tr key={idx} className="bg-black/20 hover:bg-white/5 transition-colors border-b border-white/5">
-                                    {['name', 'class', 'range', 'rof', 'dmg', 'type', 'pen', 'clip', 'rld', 'special'].map(field => (
-                                        <td key={field} className="p-1">
-                                            <input 
-                                                type="text" 
-                                                disabled={!isEditMode}
-                                                value={wpn[field]} 
-                                                onChange={(e) => updateWeapon(idx, field, e.target.value)}
-                                                className="bg-transparent w-full focus:text-white focus:outline-none disabled:text-gray-400"
-                                            />
-                                        </td>
-                                    ))}
-                                    <td className="p-1 text-center">
-                                        <div className="scale-75 origin-center">
-                                            <DiceRoller 
-                                                label={wpn.class === 'Melee' ? t('ws_short') : t('bs_short')} 
-                                                target={wpn.class === 'Melee' ? character.ws : character.bs} 
+                <div className="grid grid-cols-1 gap-2">
+                    {character.weapons?.map((wpn, idx) => {
+                        const isMelee = (wpn.class || '').toLowerCase().includes('melee')
+                                     || (wpn.class || '').toLowerCase().includes('nahkampf');
+                        const statFields = [
+                            { key: 'class',  label: t('w_class') },
+                            { key: 'range',  label: t('w_range') },
+                            { key: 'rof',    label: t('w_rof') },
+                            { key: 'dmg',    label: t('w_dmg') },
+                            { key: 'type',   label: t('w_type') },
+                            { key: 'pen',    label: t('w_pen') },
+                            { key: 'clip',   label: t('w_clip') },
+                            { key: 'rld',    label: t('w_rld') },
+                        ];
+                        return (
+                            <div
+                                key={idx}
+                                className="bg-black/30 border border-white/5 hover:border-phosphor-dim/40 transition-colors p-3 group"
+                            >
+                                {/* Header row: name + actions */}
+                                <div className="flex items-center gap-3 mb-2 pb-2 border-b border-white/5">
+                                    <input
+                                        type="text"
+                                        disabled={!isEditMode}
+                                        value={wpn.name}
+                                        onChange={(e) => updateWeapon(idx, 'name', e.target.value)}
+                                        className="flex-1 bg-transparent text-phosphor-green font-bold text-base focus:text-white focus:outline-none disabled:text-gray-300"
+                                        placeholder={t('w_name')}
+                                    />
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <div className="scale-90 origin-right">
+                                            <DiceRoller
+                                                label={isMelee ? t('ws_short') : t('bs_short')}
+                                                target={isMelee ? character.ws : character.bs}
                                             />
                                         </div>
-                                    </td>
-                                    <td className="p-1 text-center">
-                                        <button 
+                                        <button
                                             onClick={() => rollDamage(wpn.name, wpn.dmg)}
-                                            className="p-1 rounded bg-red-900/30 border border-red-900 text-red-400 hover:bg-red-900 hover:text-white transition-colors"
+                                            className="p-1.5 rounded bg-red-900/30 border border-red-900 text-red-400 hover:bg-red-900 hover:text-white transition-colors"
                                             title={t('rollDamage')}
                                         >
                                             <Sword size={14} />
                                         </button>
-                                    </td>
-                                    {isEditMode && (
-                                        <td className="p-1 text-center">
-                                            <button onClick={() => removeWeapon(idx)} className="text-red-900 hover:text-red-500"><Trash2 size={14}/></button>
-                                        </td>
-                                    )}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                        {isEditMode && (
+                                            <button onClick={() => removeWeapon(idx)} className="text-red-900 hover:text-red-500" title={t('delete')}>
+                                                <Trash2 size={14}/>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Stats grid: 8 fields, 4-col on mobile, 8-col on wide */}
+                                <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mb-2">
+                                    {statFields.map(({ key, label }) => (
+                                        <div key={key} className="flex flex-col">
+                                            <label className="text-[9px] uppercase text-tarnished-gold/70 mb-0.5 tracking-wider">{label}</label>
+                                            <input
+                                                type="text"
+                                                disabled={!isEditMode}
+                                                value={wpn[key] ?? ''}
+                                                onChange={(e) => updateWeapon(idx, key, e.target.value)}
+                                                className="bg-black/40 border border-white/10 px-1.5 py-0.5 text-xs text-phosphor-dim focus:text-white focus:border-phosphor-green focus:outline-none disabled:border-transparent disabled:text-gray-400"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Special — full width, can wrap */}
+                                <div className="flex flex-col">
+                                    <label className="text-[9px] uppercase text-tarnished-gold/70 mb-0.5 tracking-wider">{t('w_special')}</label>
+                                    <input
+                                        type="text"
+                                        disabled={!isEditMode}
+                                        value={wpn.special ?? ''}
+                                        onChange={(e) => updateWeapon(idx, 'special', e.target.value)}
+                                        className="bg-black/40 border border-white/10 px-1.5 py-0.5 text-xs text-phosphor-dim focus:text-white focus:border-phosphor-green focus:outline-none disabled:border-transparent disabled:text-gray-400"
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
                 {isEditMode && (
                     <button onClick={addWeapon} className="w-full py-2 mt-2 border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex justify-center items-center gap-2 uppercase tracking-widest text-xs">
@@ -515,6 +588,197 @@ const CharacterSheet = () => {
                     {isEditMode && (
                         <button onClick={addTalent} className="border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex justify-center items-center h-full min-h-[80px] uppercase tracking-widest text-xs rounded">
                             <Plus size={14} /> {t('addTalent')}
+                        </button>
+                    )}
+                </div>
+            </StatBlock>
+
+            {/* Companions */}
+            <StatBlock title={t('companions')}>
+                <div className="grid grid-cols-1 gap-3">
+                    {(character.companions || []).map((comp, idx) => {
+                        const collapsed = collapsedCompanions.has(idx);
+                        const compChars = [
+                            { key: 'ws',   short: t('ws_short') },
+                            { key: 'bs',   short: t('bs_short') },
+                            { key: 's',    short: t('s_short') },
+                            { key: 't',    short: t('t_short') },
+                            { key: 'ag',   short: t('ag_short') },
+                            { key: 'int_', short: t('int_short') },
+                            { key: 'per',  short: t('per_short') },
+                            { key: 'wp',   short: t('wp_short') },
+                            { key: 'fel',  short: t('fel_short') },
+                        ];
+                        return (
+                            <div key={idx} className="bg-black/30 border border-tarnished-gold/30 hover:border-tarnished-gold/60 transition-colors">
+                                {/* Header — always visible */}
+                                <div className="flex items-center gap-2 p-2 bg-black/40 border-b border-white/5">
+                                    <button
+                                        onClick={() => toggleCompanionCollapsed(idx)}
+                                        className="text-tarnished-gold hover:text-phosphor-green transition-transform flex-shrink-0"
+                                        title={collapsed ? t('expand') : t('collapse')}
+                                    >
+                                        <ChevronDown size={16} className={collapsed ? '-rotate-90' : ''} />
+                                    </button>
+                                    <PawPrint size={14} className="text-tarnished-gold flex-shrink-0" />
+                                    <input
+                                        type="text"
+                                        disabled={!isEditMode}
+                                        value={comp.name ?? ''}
+                                        onChange={(e) => updateCompanion(idx, 'name', e.target.value)}
+                                        className="flex-1 min-w-0 bg-transparent text-phosphor-green font-bold text-sm focus:text-white focus:outline-none disabled:text-gray-300"
+                                        placeholder={t('compName')}
+                                    />
+                                    <input
+                                        type="text"
+                                        disabled={!isEditMode}
+                                        value={comp.type ?? ''}
+                                        onChange={(e) => updateCompanion(idx, 'type', e.target.value)}
+                                        className="w-32 bg-transparent text-xs text-tarnished-gold/80 text-right focus:text-white focus:outline-none disabled:text-gray-500"
+                                        placeholder={t('compType')}
+                                    />
+                                    {/* Inline wounds tracker */}
+                                    <div className="flex items-center gap-1 text-red-400 flex-shrink-0">
+                                        <Heart size={12} />
+                                        <input
+                                            type="number"
+                                            value={comp.current_wounds ?? 0}
+                                            onChange={(e) => updateCompanion(idx, 'current_wounds', toInt(e.target.value))}
+                                            className="w-10 bg-transparent text-right text-sm font-bold focus:outline-none p-0"
+                                        />
+                                        <span className="text-gray-600">/</span>
+                                        <input
+                                            type="number"
+                                            disabled={!isEditMode}
+                                            value={comp.total_wounds ?? 0}
+                                            onChange={(e) => updateCompanion(idx, 'total_wounds', toInt(e.target.value))}
+                                            className="w-10 bg-transparent text-left text-sm text-red-900 focus:outline-none p-0 disabled:text-red-900/70"
+                                        />
+                                    </div>
+                                    {isEditMode && (
+                                        <button onClick={() => removeCompanion(idx)} className="text-red-900 hover:text-red-500 flex-shrink-0" title={t('delete')}>
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {!collapsed && (
+                                    <div className="p-3 space-y-3">
+                                        {/* 9 characteristics */}
+                                        <div className="grid grid-cols-3 md:grid-cols-9 gap-1.5">
+                                            {compChars.map(c => (
+                                                <div key={c.key} className="flex flex-col items-center bg-black/40 border border-white/5 p-1 rounded">
+                                                    <label className="text-[9px] uppercase text-tarnished-gold/70 tracking-wider">{c.short}</label>
+                                                    <input
+                                                        type="number"
+                                                        disabled={!isEditMode}
+                                                        value={comp[c.key] ?? 0}
+                                                        onChange={(e) => updateCompanion(idx, c.key, toInt(e.target.value))}
+                                                        className="w-full bg-transparent text-center text-sm font-bold text-phosphor-green focus:text-white focus:outline-none disabled:text-gray-300"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Movement */}
+                                        <div className="flex items-center gap-3 text-xs">
+                                            <span className="uppercase text-blue-400 tracking-wider">{t('compMove')}</span>
+                                            <input
+                                                type="number"
+                                                disabled={!isEditMode}
+                                                value={comp.movement ?? 0}
+                                                onChange={(e) => updateCompanion(idx, 'movement', toInt(e.target.value))}
+                                                className="w-14 bg-black/40 border border-white/10 px-2 py-0.5 text-blue-400 focus:outline-none focus:border-phosphor-green disabled:border-transparent"
+                                            />
+                                            <span className="text-gray-500">m</span>
+                                        </div>
+
+                                        {/* Companion weapons */}
+                                        <div className="space-y-1">
+                                            <div className="text-[10px] uppercase text-tarnished-gold tracking-wider">{t('weaponsAuth')}</div>
+                                            {(comp.weapons || []).map((w, wIdx) => (
+                                                <div key={wIdx} className="grid grid-cols-12 gap-1 items-center bg-black/40 border border-white/5 p-1 text-xs">
+                                                    <input
+                                                        type="text"
+                                                        disabled={!isEditMode}
+                                                        value={w.name ?? ''}
+                                                        onChange={(e) => updateCompanionWeapon(idx, wIdx, 'name', e.target.value)}
+                                                        placeholder={t('w_name')}
+                                                        className="col-span-4 bg-transparent text-phosphor-green focus:text-white focus:outline-none disabled:text-gray-400"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        disabled={!isEditMode}
+                                                        value={w.dmg ?? ''}
+                                                        onChange={(e) => updateCompanionWeapon(idx, wIdx, 'dmg', e.target.value)}
+                                                        placeholder={t('w_dmg')}
+                                                        className="col-span-2 bg-transparent text-center text-phosphor-dim focus:text-white focus:outline-none disabled:text-gray-500"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        disabled={!isEditMode}
+                                                        value={w.type ?? ''}
+                                                        onChange={(e) => updateCompanionWeapon(idx, wIdx, 'type', e.target.value)}
+                                                        placeholder={t('w_type')}
+                                                        className="col-span-1 bg-transparent text-center text-phosphor-dim focus:text-white focus:outline-none disabled:text-gray-500"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        disabled={!isEditMode}
+                                                        value={w.special ?? ''}
+                                                        onChange={(e) => updateCompanionWeapon(idx, wIdx, 'special', e.target.value)}
+                                                        placeholder={t('w_special')}
+                                                        className="col-span-3 bg-transparent text-phosphor-dim focus:text-white focus:outline-none disabled:text-gray-500"
+                                                    />
+                                                    <button
+                                                        onClick={() => rollDamage(`${comp.name} — ${w.name}`, w.dmg)}
+                                                        className="col-span-1 p-1 rounded bg-red-900/30 border border-red-900 text-red-400 hover:bg-red-900 hover:text-white transition-colors flex justify-center"
+                                                        title={t('rollDamage')}
+                                                    >
+                                                        <Sword size={12} />
+                                                    </button>
+                                                    {isEditMode ? (
+                                                        <button
+                                                            onClick={() => removeCompanionWeapon(idx, wIdx)}
+                                                            className="col-span-1 text-red-900 hover:text-red-500 flex justify-center"
+                                                            title={t('delete')}
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    ) : (
+                                                        <span className="col-span-1" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {isEditMode && (
+                                                <button
+                                                    onClick={() => addCompanionWeapon(idx)}
+                                                    className="w-full py-1 border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex justify-center items-center gap-2 uppercase tracking-widest text-[10px]"
+                                                >
+                                                    <Plus size={12} /> {t('addWeapon')}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Notes — covers traits, abilities, behavior */}
+                                        <textarea
+                                            disabled={!isEditMode}
+                                            value={comp.notes ?? ''}
+                                            onChange={(e) => updateCompanion(idx, 'notes', e.target.value)}
+                                            className="w-full h-20 bg-black/40 border border-phosphor-dim/30 p-2 text-xs text-phosphor-green focus:outline-none focus:border-phosphor-green resize-none custom-scrollbar disabled:border-transparent disabled:text-gray-400"
+                                            placeholder={t('compNotesPlaceholder')}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                    {isEditMode && (
+                        <button
+                            onClick={addCompanion}
+                            className="w-full py-2 border border-dashed border-phosphor-dim/40 text-phosphor-dim/60 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex justify-center items-center gap-2 uppercase tracking-widest text-xs"
+                        >
+                            <Plus size={14} /> {t('addCompanion')}
                         </button>
                     )}
                 </div>

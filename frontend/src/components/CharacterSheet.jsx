@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { useGame } from '../context/GameContext';
+import { useGame, SYSTEMS } from '../context/GameContext';
 import DiceRoller from './DiceRoller';
-import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe } from 'lucide-react';
+import Portrait from './Portrait';
+import ShipSheet from './ShipSheet';
+import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe, Crown, Anchor, Coins } from 'lucide-react';
 import clsx from 'clsx';
 import { toInt } from '../utils';
 
@@ -21,7 +23,11 @@ const StatBlock = ({ title, children, className }) => (
 const CharacterSheet = () => {
   const { character, setCharacter, saveCharacter, savedCharacters, loadCharacter, deleteCharacter, createNewCharacter, rollDamage, t, toggleLanguage, language } = useGame();
   const [showLoadModal, setShowLoadModal] = useState(false);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [showBridge, setShowBridge] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  const isRT = character?.system === SYSTEMS.RT;
 
   const updateField = (field, value) => {
       setCharacter(prev => ({ ...prev, [field]: value }));
@@ -103,19 +109,37 @@ const CharacterSheet = () => {
       
       {/* Control Bar */}
       <div className="flex flex-wrap gap-2 justify-between items-center mb-4 p-2 bg-black/40 border-b border-phosphor-dim/30 sticky top-0 z-50 backdrop-blur-md">
-        <div className="flex gap-2">
-            <button onClick={createNewCharacter} className="btn-control flex items-center gap-2 hover:text-white"><FilePlus size={16}/> {t('new')}</button>
+        <div className="flex gap-2 items-center">
+            <button onClick={() => setShowNewModal(true)} className="btn-control flex items-center gap-2 hover:text-white"><FilePlus size={16}/> {t('new')}</button>
             <button onClick={() => setShowLoadModal(true)} className="btn-control flex items-center gap-2 hover:text-white"><FolderOpen size={16}/> {t('load')}</button>
             <button onClick={saveCharacter} className="btn-control flex items-center gap-2 hover:text-phosphor-green"><Save size={16}/> {t('save')}</button>
+            <span className={clsx(
+                "ml-2 text-[10px] uppercase tracking-widest px-2 py-0.5 border",
+                isRT ? "border-tarnished-gold text-tarnished-gold" : "border-phosphor-dim text-phosphor-dim"
+            )}>
+                {isRT ? <><Crown size={10} className="inline mb-0.5 mr-1"/>{t('systemRT')}</> : <><Shield size={10} className="inline mb-0.5 mr-1"/>{t('systemOW')}</>}
+            </span>
+            {isRT && (
+                <button
+                    onClick={() => setShowBridge(b => !b)}
+                    className={clsx(
+                        "btn-control flex items-center gap-2 ml-2 transition-colors",
+                        showBridge ? "text-phosphor-green border-b border-phosphor-green" : "hover:text-phosphor-green"
+                    )}
+                    title={t('bridge')}
+                >
+                    <Anchor size={14}/> {t('bridge')}
+                </button>
+            )}
         </div>
-        
+
         <div className="flex items-center gap-4">
              <button onClick={toggleLanguage} className="btn-control flex items-center gap-2 hover:text-tarnished-gold">
                 <Globe size={16}/> {language.toUpperCase()}
              </button>
 
-             <button 
-                onClick={() => setIsEditMode(!isEditMode)} 
+             <button
+                onClick={() => setIsEditMode(!isEditMode)}
                 className={clsx(
                     "btn-control flex items-center gap-2 transition-all px-4 py-1 rounded border",
                     isEditMode ? "bg-phosphor-green/20 border-phosphor-green text-phosphor-green shadow-[0_0_10px_rgba(72,187,120,0.3)]" : "bg-transparent border-white/10 text-gray-500 hover:text-white"
@@ -123,12 +147,44 @@ const CharacterSheet = () => {
             >
                 {isEditMode ? <><Edit3 size={16}/> {t('editingActive')}</> : <><Lock size={16}/> {t('viewOnly')}</>}
             </button>
-            
+
             {character.id && isEditMode && (
                 <button onClick={() => deleteCharacter(character.id)} className="btn-control flex items-center gap-2 text-red-500 hover:text-red-400 border-l border-white/10 pl-4"><Trash2 size={16}/> {t('delete')}</button>
             )}
         </div>
       </div>
+
+      {/* New Character Modal — system picker */}
+      {showNewModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowNewModal(false)}>
+              <div className="bg-imperial-dark border border-tarnished-gold p-6 w-full max-w-lg shadow-[0_0_20px_rgba(197,160,89,0.2)]" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="font-gothic text-xl text-tarnished-gold mb-4 border-b border-white/10 pb-2">{t('chooseSystem')}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <button
+                          onClick={() => { createNewCharacter(SYSTEMS.OW); setShowNewModal(false); }}
+                          className="p-4 border border-phosphor-dim/40 hover:border-phosphor-green hover:bg-phosphor-green/5 transition-colors text-left"
+                      >
+                          <div className="flex items-center gap-2 mb-2">
+                              <Shield size={20} className="text-phosphor-green"/>
+                              <span className="font-gothic text-lg text-phosphor-green">{t('systemOW')}</span>
+                          </div>
+                          <p className="text-[11px] text-gray-400">{t('systemOWDesc')}</p>
+                      </button>
+                      <button
+                          onClick={() => { createNewCharacter(SYSTEMS.RT); setShowNewModal(false); }}
+                          className="p-4 border border-tarnished-gold/40 hover:border-tarnished-gold hover:bg-tarnished-gold/20 transition-colors text-left"
+                      >
+                          <div className="flex items-center gap-2 mb-2">
+                              <Crown size={20} className="text-tarnished-gold"/>
+                              <span className="font-gothic text-lg text-tarnished-gold">{t('systemRT')}</span>
+                          </div>
+                          <p className="text-[11px] text-gray-400">{t('systemRTDesc')}</p>
+                      </button>
+                  </div>
+                  <button onClick={() => setShowNewModal(false)} className="mt-4 w-full py-2 bg-red-900/30 border border-red-800 text-red-400 hover:bg-red-900/50">{t('close')}</button>
+              </div>
+          </div>
+      )}
 
       {/* Load Modal */}
       {showLoadModal && (
@@ -138,12 +194,22 @@ const CharacterSheet = () => {
                   <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                       {savedCharacters.map(char => (
                           <div key={char.id} className="flex justify-between items-center p-2 hover:bg-white/5 cursor-pointer group"
-                               onClick={() => { loadCharacter(char.id); setShowLoadModal(false); }}>
+                               onClick={() => { loadCharacter(char.id); setShowLoadModal(false); setShowBridge(false); }}>
                               <div>
                                   <div className="font-bold text-phosphor-green group-hover:text-white">{char.name}</div>
-                                  <div className="text-xs text-gray-500">{char.regiment} - {char.specialty}</div>
+                                  <div className="text-xs text-gray-500">
+                                      {char.system === SYSTEMS.RT
+                                        ? `${char.career || '—'}${char.profit_factor != null ? ` • ${t('pf_short')} ${char.profit_factor}` : ''}`
+                                        : `${char.regiment || '—'}${char.specialty ? ` • ${char.specialty}` : ''}`}
+                                  </div>
                               </div>
-                              <div className="text-xs text-tarnished-gold">ID: {char.id}</div>
+                              <div className="flex items-center gap-2">
+                                  <span className={clsx(
+                                      "text-[9px] uppercase tracking-widest px-1 border",
+                                      char.system === SYSTEMS.RT ? "border-tarnished-gold text-tarnished-gold" : "border-phosphor-dim text-phosphor-dim"
+                                  )}>{char.system === SYSTEMS.RT ? 'RT' : 'OW'}</span>
+                                  <div className="text-xs text-tarnished-gold">ID: {char.id}</div>
+                              </div>
                           </div>
                       ))}
                       {savedCharacters.length === 0 && <div className="text-gray-500 italic">{t('noRecords')}</div>}
@@ -156,19 +222,51 @@ const CharacterSheet = () => {
       {/* Header Info & XP */}
       <StatBlock title={t('personnelRecord')} className="border-t-4 border-t-tarnished-gold">
         <div className="flex flex-col md:flex-row gap-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
-            {['name', 'regiment', 'specialty', 'demeanour'].map((field) => (
-                <div key={field} className="flex flex-col">
-                <label className="text-[10px] uppercase text-gray-500 mb-1">{t(field)}</label>
-                <input 
-                    type="text" 
-                    value={character[field]}
-                    disabled={!isEditMode}
-                    onChange={(e) => updateField(field, e.target.value)}
-                    className="bg-transparent border-b border-phosphor-dim text-phosphor-green font-gothic text-lg focus:outline-none focus:border-phosphor-green w-full disabled:border-transparent disabled:text-gray-400"
-                />
-                </div>
-            ))}
+
+            {/* Portrait column */}
+            <div className="w-full md:w-48 flex-shrink-0">
+                <Portrait isEditMode={isEditMode} />
+            </div>
+
+            {/* Identity fields — system-aware */}
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4 flex-1">
+                {[
+                    { field: 'name', label: t('name') },
+                    isRT
+                        ? { field: 'career', label: t('career') }
+                        : { field: 'regiment', label: t('regiment') },
+                    isRT
+                        ? null
+                        : { field: 'specialty', label: t('specialty') },
+                    { field: 'demeanour', label: t('demeanour') },
+                ].filter(Boolean).map(({ field, label }) => (
+                    <div key={field} className="flex flex-col">
+                        <label className="text-[10px] uppercase text-gray-500 mb-1">{label}</label>
+                        <input
+                            type="text"
+                            value={character[field] ?? ''}
+                            disabled={!isEditMode}
+                            onChange={(e) => updateField(field, e.target.value)}
+                            className="bg-transparent border-b border-phosphor-dim text-phosphor-green font-gothic text-lg focus:outline-none focus:border-phosphor-green w-full disabled:border-transparent disabled:text-gray-400"
+                        />
+                    </div>
+                ))}
+
+                {/* Profit Factor — RT only, takes the slot freed by removing 'specialty' */}
+                {isRT && (
+                    <div className="flex flex-col">
+                        <label className="text-[10px] uppercase text-gray-500 mb-1 flex items-center gap-1">
+                            <Coins size={10} /> {t('profitFactor')}
+                        </label>
+                        <input
+                            type="number"
+                            value={character.profit_factor ?? 0}
+                            disabled={!isEditMode}
+                            onChange={(e) => updateField('profit_factor', toInt(e.target.value))}
+                            className="bg-transparent border-b border-tarnished-gold text-tarnished-gold font-gothic text-lg focus:outline-none focus:border-phosphor-green w-full disabled:border-transparent disabled:text-gray-400"
+                        />
+                    </div>
+                )}
             </div>
 
             {/* XP Tracker */}
@@ -177,22 +275,22 @@ const CharacterSheet = () => {
                 <div className="grid grid-cols-2 gap-2">
                     <div>
                         <label className="text-[10px] text-gray-500">{t('total')}</label>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             disabled={!isEditMode}
-                            value={character.xp?.total || 0} 
-                            onChange={(e) => updateNestedField('xp', 'total', null, toInt(e.target.value))} 
-                            className="w-full bg-transparent border-b border-gray-700 text-right font-bold text-sm disabled:border-transparent" 
+                            value={character.xp?.total || 0}
+                            onChange={(e) => updateNestedField('xp', 'total', null, toInt(e.target.value))}
+                            className="w-full bg-transparent border-b border-gray-700 text-right font-bold text-sm disabled:border-transparent"
                         />
                     </div>
                     <div>
                         <label className="text-[10px] text-gray-500">{t('spent')}</label>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             disabled={!isEditMode}
-                            value={character.xp?.spent || 0} 
-                            onChange={(e) => updateNestedField('xp', 'spent', null, toInt(e.target.value))} 
-                            className="w-full bg-transparent border-b border-gray-700 text-right font-bold text-sm disabled:border-transparent" 
+                            value={character.xp?.spent || 0}
+                            onChange={(e) => updateNestedField('xp', 'spent', null, toInt(e.target.value))}
+                            className="w-full bg-transparent border-b border-gray-700 text-right font-bold text-sm disabled:border-transparent"
                         />
                     </div>
                 </div>
@@ -204,8 +302,11 @@ const CharacterSheet = () => {
         </div>
       </StatBlock>
 
+      {showBridge && isRT && <ShipSheet onClose={() => setShowBridge(false)} />}
+
+      {!showBridge && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         <div className="lg:col-span-2 space-y-6">
             {/* Characteristics */}
             <StatBlock title={t('characteristics')}>
@@ -526,6 +627,7 @@ const CharacterSheet = () => {
         </div>
 
       </div>
+      )}
     </div>
   );
 };

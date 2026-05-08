@@ -5,19 +5,27 @@ import clsx from 'clsx';
 
 const ACCEPTED = 'image/jpeg,image/png,image/webp';
 
-const Portrait = ({ isEditMode }) => {
-  const { character, uploadPortrait, recropPortrait, removePortrait, portraitUrl, t } = useGame();
+const Portrait = () => {
+  const { character, saveCharacter, uploadPortrait, recropPortrait, removePortrait, portraitUrl, triggerFeedback, t } = useGame();
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
   const url = character.has_portrait ? portraitUrl() : null;
-  const canUpload = !!character.id && isEditMode;
+  const canUpload = !busy;
 
-  const handleFile = async (file) => {
-    if (!file || !ACCEPTED.split(',').includes(file.type)) return;
+  const ensureSavedThenHandle = async (file) => {
+    if (!file || !ACCEPTED.split(',').includes(file.type)) {
+      triggerFeedback('failure', 'Use JPEG, PNG, or WebP');
+      return;
+    }
     setBusy(true);
     try {
+      // Backend needs an existing row before we can attach a portrait.
+      // Auto-save unsaved characters so the upload UX feels seamless.
+      if (!character.id) {
+        await saveCharacter();
+      }
       await uploadPortrait(file);
     } finally {
       setBusy(false);
@@ -26,7 +34,7 @@ const Portrait = ({ isEditMode }) => {
 
   const onSelect = (e) => {
     const f = e.target.files?.[0];
-    if (f) handleFile(f);
+    if (f) ensureSavedThenHandle(f);
     e.target.value = '';
   };
 
@@ -35,7 +43,7 @@ const Portrait = ({ isEditMode }) => {
     setDragOver(false);
     if (!canUpload) return;
     const f = e.dataTransfer.files?.[0];
-    if (f) handleFile(f);
+    if (f) ensureSavedThenHandle(f);
   };
 
   return (

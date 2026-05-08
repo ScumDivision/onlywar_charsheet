@@ -41,58 +41,102 @@
 /* ============================================================
  * Rogue Trader theme — von Moehrder dynasty heraldry
  * Activated by `data-theme="rt"` on the root wrapper.
+ *
  * Strategy: re-skin the existing OW utility classes so component
- * markup stays untouched. Inputs/text remain readable; chrome
- * (frames, accents, headers) takes the brass/orange/blue palette.
+ * markup stays untouched. Inputs/text stay readable; chrome
+ * (frames, accents, headers, panels) takes the brass/orange/petrol
+ * palette. Body picks up a deep petrol gradient so the system change
+ * is felt immediately, not just in accents.
  * ============================================================ */
-[data-theme="rt"] body,
-[data-theme="rt"] .bg-imperial-dark { background-color: #0a0a0e; }
-[data-theme="rt"] .bg-imperial-green\/30 { background-color: rgba(30, 68, 88, 0.30); }
 
+/* --- Body / app shell ------------------------------------------ */
+[data-theme="rt"] body {
+  background-color: #0a0a0e;
+}
+[data-theme="rt"] .bg-imperial-dark {
+  /* Heraldic backdrop: deep petrol fading to near-black, with a
+     subtle orange glow at the top edge — reads "noble" not "tactical" */
+  background-color: #0a0a0e;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201, 89, 30, 0.10), transparent 60%),
+    radial-gradient(ellipse 60% 60% at 50% 100%, rgba(30, 68, 88, 0.18), transparent 60%),
+    linear-gradient(180deg, #0e1a24 0%, #0a0a0e 60%, #08070a 100%);
+}
+
+/* Inner panels — give the bg-black/* family a faint petrol tint */
+[data-theme="rt"] .bg-black\/20 { background-color: rgba(14, 30, 42, 0.50); }
+[data-theme="rt"] .bg-black\/30 { background-color: rgba(14, 30, 42, 0.60); }
+[data-theme="rt"] .bg-black\/40 { background-color: rgba(14, 30, 42, 0.72); }
+[data-theme="rt"] .bg-black\/50 { background-color: rgba(10, 22, 32, 0.80); }
+[data-theme="rt"] .bg-black\/80 { background-color: rgba(8, 16, 24, 0.88); }
+
+[data-theme="rt"] .bg-imperial-green\/30 { background-color: rgba(30, 68, 88, 0.45); }
+
+/* --- Text colors ---------------------------------------------- */
 [data-theme="rt"] .text-phosphor-green { color: #e8c98a; }
-[data-theme="rt"] .text-phosphor-dim { color: #b8945a; }
-[data-theme="rt"] .text-tarnished-gold { color: #d4b57a; }
+[data-theme="rt"] .text-phosphor-dim   { color: #b8945a; }
+[data-theme="rt"] .text-tarnished-gold { color: #e8a558; }
 
+/* --- Borders -------------------------------------------------- */
 [data-theme="rt"] .border-phosphor-green,
 [data-theme="rt"] .border-phosphor-green\/50,
 [data-theme="rt"] .border-phosphor-green\/60 { border-color: #c9591e; }
+
 [data-theme="rt"] .border-phosphor-dim,
 [data-theme="rt"] .border-phosphor-dim\/30,
 [data-theme="rt"] .border-phosphor-dim\/40,
-[data-theme="rt"] .border-phosphor-dim\/50 { border-color: rgba(184, 148, 90, 0.45); }
-[data-theme="rt"] .border-tarnished-gold { border-color: #b8945a; }
-[data-theme="rt"] .border-t-tarnished-gold { border-top-color: #c9591e; }
+[data-theme="rt"] .border-phosphor-dim\/50 { border-color: rgba(184, 148, 90, 0.55); }
 
-[data-theme="rt"] .bg-tarnished-gold { background-color: #b8945a; }
-[data-theme="rt"] .bg-tarnished-gold\/20 { background-color: rgba(184, 148, 90, 0.25); }
+[data-theme="rt"] .border-tarnished-gold     { border-color: #c9591e; }
+[data-theme="rt"] .border-t-tarnished-gold   { border-top-color: #c9591e; box-shadow: 0 1px 0 rgba(201, 89, 30, 0.3); }
 
-[data-theme="rt"] .bg-phosphor-green { background-color: #c9591e; color: #0a0a0e; }
-[data-theme="rt"] .bg-phosphor-green\/5 { background-color: rgba(201, 89, 30, 0.06); }
-[data-theme="rt"] .bg-phosphor-green\/20 { background-color: rgba(201, 89, 30, 0.20); }
-[data-theme="rt"] .hover\:bg-phosphor-green:hover { background-color: #c9591e; color: #0a0a0e; }
-[data-theme="rt"] .hover\:bg-phosphor-green\/5:hover { background-color: rgba(201, 89, 30, 0.06); }
-[data-theme="rt"] .hover\:border-phosphor-green:hover { border-color: #c9591e; }
-[data-theme="rt"] .hover\:text-phosphor-green:hover { color: #e8c98a; }
+/* --- Solid fills --------------------------------------------- */
+[data-theme="rt"] .bg-tarnished-gold        { background-color: #c9591e; }
+[data-theme="rt"] .bg-tarnished-gold\/20    { background-color: rgba(201, 89, 30, 0.22); }
+
+[data-theme="rt"] .bg-phosphor-green        { background-color: #c9591e; color: #0a0a0e; }
+[data-theme="rt"] .bg-phosphor-green\/5     { background-color: rgba(201, 89, 30, 0.08); }
+[data-theme="rt"] .bg-phosphor-green\/20    { background-color: rgba(201, 89, 30, 0.22); }
+
+/* --- Hover & focus ------------------------------------------ */
+[data-theme="rt"] .hover\:bg-phosphor-green:hover     { background-color: #c9591e; color: #0a0a0e; }
+[data-theme="rt"] .hover\:bg-phosphor-green\/5:hover  { background-color: rgba(201, 89, 30, 0.08); }
+[data-theme="rt"] .hover\:border-phosphor-green:hover { border-color: #e87432; }
+[data-theme="rt"] .hover\:text-phosphor-green:hover   { color: #e8c98a; }
 [data-theme="rt"] .focus\:border-phosphor-green:focus { border-color: #c9591e; }
 
 [data-theme="rt"] .selection\:bg-phosphor-green::selection { background-color: #c9591e; }
 
+/* --- Glow & shadow accents ---------------------------------- */
 [data-theme="rt"] .text-glow {
-  text-shadow: 0 0 6px rgba(232, 201, 138, 0.55);
+  text-shadow:
+    0 0 8px rgba(232, 165, 88, 0.55),
+    0 0 24px rgba(201, 89, 30, 0.35);
 }
 
+[data-theme="rt"] .border-glow {
+  box-shadow: 0 0 8px rgba(201, 89, 30, 0.45);
+}
+
+/* CRT scanlines warmer & more diffuse for RT — reads as gilded
+   parchment rather than phosphor display */
 [data-theme="rt"] .crt-overlay {
-  /* warm brass/orange tint instead of phosphor green */
   background: linear-gradient(
     rgba(20, 14, 8, 0) 50%,
-    rgba(0, 0, 0, 0.28) 50%
+    rgba(0, 0, 0, 0.18) 50%
   ), linear-gradient(
     90deg,
-    rgba(201, 89, 30, 0.05),
-    rgba(184, 148, 90, 0.025),
-    rgba(30, 68, 88, 0.05)
+    rgba(201, 89, 30, 0.08),
+    rgba(184, 148, 90, 0.04),
+    rgba(30, 68, 88, 0.06)
   );
-  background-size: 100% 2px, 3px 100%;
+  background-size: 100% 3px, 4px 100%;
+}
+
+/* The thin gold underline beneath the page title (App.jsx) gets
+   a deeper orange-to-brass shimmer in RT */
+[data-theme="rt"] .bg-tarnished-gold[class*="shadow"] {
+  background-image: linear-gradient(90deg, #b8945a 0%, #c9591e 50%, #b8945a 100%);
 }
 
 /* Hide number input spinners */

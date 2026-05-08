@@ -225,7 +225,7 @@ const CharacterSheet = () => {
 
             {/* Portrait column */}
             <div className="w-full md:w-48 flex-shrink-0">
-                <Portrait isEditMode={isEditMode} />
+                <Portrait />
             </div>
 
             {/* Identity fields — system-aware */}

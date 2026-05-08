@@ -3,6 +3,7 @@ import { useGame } from '../context/GameContext';
 import DiceRoller from './DiceRoller';
 import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe } from 'lucide-react';
 import clsx from 'clsx';
+import { toInt } from '../utils';
 
 const StatBlock = ({ title, children, className }) => (
   <div className={`p-4 border border-phosphor-dim/50 bg-black/20 relative ${className}`}>
@@ -180,7 +181,7 @@ const CharacterSheet = () => {
                             type="number" 
                             disabled={!isEditMode}
                             value={character.xp?.total || 0} 
-                            onChange={(e) => updateNestedField('xp', 'total', null, parseInt(e.target.value))} 
+                            onChange={(e) => updateNestedField('xp', 'total', null, toInt(e.target.value))} 
                             className="w-full bg-transparent border-b border-gray-700 text-right font-bold text-sm disabled:border-transparent" 
                         />
                     </div>
@@ -190,7 +191,7 @@ const CharacterSheet = () => {
                             type="number" 
                             disabled={!isEditMode}
                             value={character.xp?.spent || 0} 
-                            onChange={(e) => updateNestedField('xp', 'spent', null, parseInt(e.target.value))} 
+                            onChange={(e) => updateNestedField('xp', 'spent', null, toInt(e.target.value))} 
                             className="w-full bg-transparent border-b border-gray-700 text-right font-bold text-sm disabled:border-transparent" 
                         />
                     </div>
@@ -217,7 +218,7 @@ const CharacterSheet = () => {
                                         type="number" 
                                         className="w-12 text-center bg-black/90 text-sm font-bold text-phosphor-green border border-phosphor-green/50 rounded shadow-[0_0_5px_rgba(72,187,120,0.5)] focus:outline-none"
                                         value={character[char.key]}
-                                        onChange={(e) => updateField(char.key, parseInt(e.target.value) || 0)}
+                                        onChange={(e) => updateField(char.key, toInt(e.target.value))}
                                     />
                                     <span className="text-[8px] text-center text-phosphor-dim uppercase">{t('base')}</span>
                                 </div>
@@ -271,7 +272,7 @@ const CharacterSheet = () => {
                                         <select 
                                             disabled={!isEditMode}
                                             value={skill.bonus}
-                                            onChange={(e) => handleSkillChange(idx, 'bonus', parseInt(e.target.value))}
+                                            onChange={(e) => handleSkillChange(idx, 'bonus', toInt(e.target.value))}
                                             className="bg-transparent text-gray-400 focus:outline-none text-right disabled:appearance-none disabled:bg-none"
                                         >
                                             <option value={0}>+0</option>
@@ -416,22 +417,22 @@ const CharacterSheet = () => {
                             <span className="text-xs uppercase text-red-400 flex items-center gap-2"><Heart size={14}/> {t('wounds')}</span>
                             <div className="flex items-center gap-1">
                                 <input type="number" className="w-12 bg-transparent text-right font-bold text-2xl text-red-500 focus:outline-none p-0" 
-                                    value={character.current_wounds} onChange={(e) => updateField('current_wounds', parseInt(e.target.value))} />
+                                    value={character.current_wounds} onChange={(e) => updateField('current_wounds', toInt(e.target.value))} />
                                 <span className="text-gray-600 text-xl font-bold">/</span>
                                 <input type="number" className="w-10 bg-transparent text-left font-bold text-lg text-red-900 focus:outline-none p-0" 
                                     disabled={!isEditMode}
-                                    value={character.total_wounds} onChange={(e) => updateField('total_wounds', parseInt(e.target.value))} />
+                                    value={character.total_wounds} onChange={(e) => updateField('total_wounds', toInt(e.target.value))} />
                             </div>
                         </div>
                         <div className="bg-black/30 p-3 rounded border border-white/5 flex justify-between items-center">
                             <span className="text-xs uppercase text-tarnished-gold flex items-center gap-2"><Shield size={14}/> {t('fate')}</span>
                             <div className="flex items-center gap-1">
                                 <input type="number" className="w-12 bg-transparent text-right font-bold text-2xl text-tarnished-gold focus:outline-none p-0" 
-                                    value={character.current_fate} onChange={(e) => updateField('current_fate', parseInt(e.target.value))} />
+                                    value={character.current_fate} onChange={(e) => updateField('current_fate', toInt(e.target.value))} />
                                 <span className="text-gray-600 text-xl font-bold">/</span>
                                 <input type="number" className="w-10 bg-transparent text-left font-bold text-lg text-yellow-900 focus:outline-none p-0" 
                                     disabled={!isEditMode}
-                                    value={character.total_fate} onChange={(e) => updateField('total_fate', parseInt(e.target.value))} />
+                                    value={character.total_fate} onChange={(e) => updateField('total_fate', toInt(e.target.value))} />
                             </div>
                         </div>
                     </div>
@@ -441,17 +442,17 @@ const CharacterSheet = () => {
                         <div className="flex justify-between items-center bg-black/30 p-2 rounded">
                             <div className="text-xs text-yellow-600 uppercase flex items-center gap-2"><Activity size={14}/> {t('fatigue')}</div>
                             <input type="number" className="w-16 bg-transparent text-right font-bold text-xl text-yellow-600 focus:outline-none p-0" 
-                                value={character.fatigue} onChange={(e) => updateField('fatigue', parseInt(e.target.value))} />
+                                value={character.fatigue} onChange={(e) => updateField('fatigue', toInt(e.target.value))} />
                         </div>
                         <div className="flex justify-between items-center bg-black/30 p-2 rounded">
                             <div className="text-xs text-purple-400 uppercase flex items-center gap-2"><Brain size={14}/> {t('insanity')}</div>
                             <input type="number" className="w-16 bg-transparent text-right font-bold text-xl text-purple-400 focus:outline-none p-0" 
-                                value={character.insanity} onChange={(e) => updateField('insanity', parseInt(e.target.value))} />
+                                value={character.insanity} onChange={(e) => updateField('insanity', toInt(e.target.value))} />
                         </div>
                         <div className="flex justify-between items-center bg-black/30 p-2 rounded">
                             <div className="text-xs text-green-900 uppercase flex items-center gap-2"><Skull size={14}/> {t('corruption')}</div>
                             <input type="number" className="w-16 bg-transparent text-right font-bold text-xl text-green-900 focus:outline-none p-0" 
-                                value={character.corruption} onChange={(e) => updateField('corruption', parseInt(e.target.value))} />
+                                value={character.corruption} onChange={(e) => updateField('corruption', toInt(e.target.value))} />
                         </div>
                     </div>
 
@@ -461,7 +462,7 @@ const CharacterSheet = () => {
                             <span className="text-xs uppercase text-blue-400">{t('movement')}</span>
                             <input type="number" className="w-12 bg-black/30 border border-blue-900/50 text-right text-blue-400 p-1 focus:outline-none disabled:border-transparent disabled:text-gray-500"
                                 disabled={!isEditMode}
-                                value={character.movement} onChange={(e) => updateField('movement', parseInt(e.target.value))} />
+                                value={character.movement} onChange={(e) => updateField('movement', toInt(e.target.value))} />
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-center text-[10px] text-gray-500">
                             {['move_half', 'move_full', 'move_charge', 'move_run'].map((modeKey, i) => {
@@ -491,7 +492,7 @@ const CharacterSheet = () => {
                                         type="number" 
                                         disabled={!isEditMode}
                                         value={stats.ap} 
-                                        onChange={(e) => updateNestedField('armour', loc, 'ap', parseInt(e.target.value))}
+                                        onChange={(e) => updateNestedField('armour', loc, 'ap', toInt(e.target.value))}
                                         className="w-10 bg-black/50 text-center text-white border border-white/10 text-sm p-1 focus:outline-none disabled:border-transparent"
                                     />
                                 </div>

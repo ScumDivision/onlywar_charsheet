@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { Dices } from 'lucide-react';
 import clsx from 'clsx';
+import { toInt } from '../utils';
 
 const DiceRoller = ({ label, target }) => {
   const { triggerFeedback, addToLog, t } = useGame();
   const [modifier, setModifier] = useState(0);
   const [lastRoll, setLastRoll] = useState(null);
 
+  const safeTarget = toInt(target);
+  const effectiveTarget = safeTarget + toInt(modifier);
+
   const rollDice = () => {
     const roll = Math.floor(Math.random() * 100) + 1;
-    const effectiveTarget = target + parseInt(modifier);
     const degrees = Math.floor((effectiveTarget - roll) / 10);
-    
+
     let resultType = 'failure';
     let message = t('failure');
 
@@ -42,21 +45,21 @@ const DiceRoller = ({ label, target }) => {
   };
 
   return (
-    <div className="flex items-center justify-between bg-imperial-green/30 p-2 rounded border border-phosphor-dim/30 hover:border-phosphor-green/60 transition-colors group">
+    <div className="relative flex items-center justify-between bg-imperial-green/30 p-2 rounded border border-phosphor-dim/30 hover:border-phosphor-green/60 transition-colors group">
       <div className="flex flex-col">
         <span className="text-xs uppercase text-tarnished-gold tracking-wider">{label}</span>
-        <span className="text-xl font-mono font-bold text-phosphor-green">{target}</span>
+        <span className="text-xl font-mono font-bold text-phosphor-green">{safeTarget}</span>
       </div>
 
       <div className="flex items-center space-x-2">
-        <input 
-          type="number" 
-          value={modifier} 
-          onChange={(e) => setModifier(e.target.value)}
+        <input
+          type="number"
+          value={modifier}
+          onChange={(e) => setModifier(toInt(e.target.value))}
           className="w-12 bg-black/50 border border-phosphor-dim text-right text-xs p-1 text-phosphor-green focus:outline-none focus:border-phosphor-green"
           placeholder="+0"
         />
-        <button 
+        <button
           onClick={rollDice}
           className="p-2 bg-imperial-dark border border-phosphor-dim rounded hover:bg-phosphor-green hover:text-black transition-all active:scale-95 group-hover:animate-pulse"
           title="Roll D100"
@@ -64,11 +67,11 @@ const DiceRoller = ({ label, target }) => {
           <Dices size={18} />
         </button>
       </div>
-      
+
       {lastRoll !== null && (
           <div className={clsx(
               "absolute -top-2 -right-2 text-[10px] px-1 rounded font-bold",
-              lastRoll <= (target + parseInt(modifier)) ? "bg-phosphor-green text-black" : "bg-mechanicus-red text-white"
+              lastRoll <= effectiveTarget ? "bg-phosphor-green text-black" : "bg-mechanicus-red text-white"
           )}>
               {lastRoll}
           </div>

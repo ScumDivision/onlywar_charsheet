@@ -33,7 +33,7 @@ const owDefault = () => ({
   current_wounds: 10, total_wounds: 10,
   current_fate: 1, total_fate: 1,
   fatigue: 0, insanity: 0, corruption: 0, movement: 3,
-  skills: [], weapons: [], talents: [], companions: [],
+  skills: [], weapons: [], talents: [], companions: [], log_entries: [],
   armour: blankArmour(),
   gear: "",
   xp: { current: 0, spent: 0, total: 0 },
@@ -54,7 +54,7 @@ const rtDefault = () => ({
   current_wounds: 11, total_wounds: 11,
   current_fate: 3, total_fate: 3,
   fatigue: 0, insanity: 0, corruption: 0, movement: 3,
-  skills: [], weapons: [], talents: [], companions: [],
+  skills: [], weapons: [], talents: [], companions: [], log_entries: [],
   armour: blankArmour(),
   gear: "",
   xp: { current: 0, spent: 0, total: 0 },
@@ -254,6 +254,14 @@ const translations = {
     compNotesPlaceholder: "Traits, abilities, behavior...",
     expand: "Expand",
     collapse: "Collapse",
+
+    // Log entries
+    logEntries: "Captain's Log",
+    addLogEntry: "New Entry",
+    logDate: "Imperial Date",
+    logDatePlaceholder: "e.g. 0.342.M42",
+    logTextPlaceholder: "Encrypted log entry — record events, contracts, debts, names...",
+    noLogEntries: "Log empty. Begin a new entry to commence the dataslate record.",
   },
   de: {
     // UI
@@ -431,6 +439,14 @@ const translations = {
     compNotesPlaceholder: "Eigenschaften, Fähigkeiten, Verhalten...",
     expand: "Aufklappen",
     collapse: "Einklappen",
+
+    // Logbuch
+    logEntries: "Logbuch des Kapitäns",
+    addLogEntry: "Neuer Eintrag",
+    logDate: "Imperialer Datumsstempel",
+    logDatePlaceholder: "z.B. 0.342.M42",
+    logTextPlaceholder: "Verschlüsselter Logeintrag — Ereignisse, Verträge, Schulden, Namen...",
+    noLogEntries: "Logbuch leer. Beginne einen neuen Eintrag um die Datenakte zu eröffnen.",
   }
 };
 
@@ -501,6 +517,7 @@ export const GameProvider = ({ children }) => {
       if (!loaded.talents) loaded.talents = [];
       if (!loaded.skills) loaded.skills = [];
       if (!Array.isArray(loaded.companions)) loaded.companions = [];
+      if (!Array.isArray(loaded.log_entries)) loaded.log_entries = [];
       if (!loaded.armour || Object.keys(loaded.armour).length === 0) {
           loaded.armour = blankArmour();
       }

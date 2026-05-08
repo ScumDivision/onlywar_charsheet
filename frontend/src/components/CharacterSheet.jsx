@@ -3,7 +3,7 @@ import { useGame, SYSTEMS } from '../context/GameContext';
 import DiceRoller from './DiceRoller';
 import Portrait from './Portrait';
 import ShipSheet from './ShipSheet';
-import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe, Crown, Anchor, Coins, ChevronDown, PawPrint } from 'lucide-react';
+import { User, Activity, Shield, Brain, Eye, Zap, Heart, Skull, AlertOctagon, Save, Trash2, FolderOpen, Plus, FilePlus, Edit3, Lock, Star, Sword, Globe, Crown, Anchor, Coins, ChevronDown, PawPrint, ScrollText } from 'lucide-react';
 import clsx from 'clsx';
 import { toInt } from '../utils';
 
@@ -141,6 +141,20 @@ const CharacterSheet = () => {
           return next;
       });
   };
+
+  // --- Log Entries ---
+  const addLogEntry = () => setCharacter(prev => ({
+      ...prev,
+      log_entries: [{ id: Date.now(), date_m42: "", text: "" }, ...(prev.log_entries || [])],
+  }));
+  const removeLogEntry = (id) => setCharacter(prev => ({
+      ...prev,
+      log_entries: (prev.log_entries || []).filter(e => e.id !== id),
+  }));
+  const updateLogEntry = (id, field, value) => setCharacter(prev => ({
+      ...prev,
+      log_entries: (prev.log_entries || []).map(e => e.id === id ? { ...e, [field]: value } : e),
+  }));
 
 
   const characteristics = [
@@ -371,6 +385,7 @@ const CharacterSheet = () => {
       {showBridge && isRT && <ShipSheet onClose={() => setShowBridge(false)} />}
 
       {!showBridge && (
+      <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <div className="lg:col-span-2 space-y-6">
@@ -446,6 +461,9 @@ const CharacterSheet = () => {
                                             <option value={10}>+10</option>
                                             <option value={20}>+20</option>
                                             <option value={30}>+30</option>
+                                            <option value={40}>+40</option>
+                                            <option value={50}>+50</option>
+                                            <option value={60}>+60</option>
                                         </select>
                                     </div>
                                 </div>
@@ -906,6 +924,63 @@ const CharacterSheet = () => {
         </div>
 
       </div>
+
+      {/* Captain's Log — full-width, below the two-column grid */}
+      <StatBlock title={<span className="flex items-center gap-2"><ScrollText size={12} /> {t('logEntries')}</span>}>
+          <div className="flex justify-end">
+              {isEditMode && (
+                  <button
+                      onClick={addLogEntry}
+                      className="px-3 py-1 border border-dashed border-phosphor-dim/40 text-phosphor-dim/80 hover:text-phosphor-green hover:border-phosphor-green hover:bg-phosphor-green/5 transition-all flex items-center gap-2 uppercase tracking-widest text-xs"
+                  >
+                      <Plus size={14} /> {t('addLogEntry')}
+                  </button>
+              )}
+          </div>
+          <div className="space-y-2">
+              {(character.log_entries || []).length === 0 && (
+                  <div className="text-center text-gray-600 italic text-sm py-4">{t('noLogEntries')}</div>
+              )}
+              {(character.log_entries || [])
+                  .slice()
+                  .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
+                  .map(entry => (
+                      <div key={entry.id} className="bg-black/30 border border-white/5 hover:border-phosphor-dim/40 transition-colors group">
+                          {/* Header row: imperial date + delete */}
+                          <div className="flex items-center gap-2 p-2 bg-black/40 border-b border-white/5">
+                              <ScrollText size={12} className="text-tarnished-gold flex-shrink-0" />
+                              <input
+                                  type="text"
+                                  disabled={!isEditMode}
+                                  value={entry.date_m42 ?? ''}
+                                  onChange={(e) => updateLogEntry(entry.id, 'date_m42', e.target.value)}
+                                  placeholder={t('logDatePlaceholder')}
+                                  className="flex-1 bg-transparent text-tarnished-gold text-sm font-mono tracking-wider focus:text-white focus:outline-none disabled:text-tarnished-gold/70 placeholder-gray-700"
+                              />
+                              {isEditMode && (
+                                  <button
+                                      onClick={() => removeLogEntry(entry.id)}
+                                      className="text-red-900 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title={t('delete')}
+                                  >
+                                      <Trash2 size={14} />
+                                  </button>
+                              )}
+                          </div>
+                          {/* Body — auto-grow textarea */}
+                          <textarea
+                              disabled={!isEditMode}
+                              value={entry.text ?? ''}
+                              onChange={(e) => updateLogEntry(entry.id, 'text', e.target.value)}
+                              placeholder={t('logTextPlaceholder')}
+                              className="w-full min-h-[6rem] bg-transparent p-3 text-sm text-phosphor-green font-mono focus:outline-none resize-y custom-scrollbar disabled:text-gray-400"
+                          />
+                      </div>
+                  ))
+              }
+          </div>
+      </StatBlock>
+      </>
       )}
     </div>
   );

@@ -5,14 +5,12 @@ import ParticleEffects from './components/ParticleEffects';
 import DiceLog from './components/DiceLog';
 
 const Shell = () => {
-  const { character } = useGame();
+  const { character, t } = useGame();
   const isRT = character?.system === SYSTEMS.RT;
 
   const themeAttr = isRT ? 'rt' : 'ow';
   const title = isRT ? 'Rogue Trader' : 'Only War';
-  const subtitle = isRT
-    ? "Decree of Imperial Patent // Sigil: Mœhrder"
-    : "Departmento Munitorum Dataslate // Auth: Lambda-7";
+  const subtitle = isRT ? t('subtitleRT') : t('subtitleOW');
 
   return (
     <div

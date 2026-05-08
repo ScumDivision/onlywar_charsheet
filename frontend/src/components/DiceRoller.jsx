@@ -62,7 +62,7 @@ const DiceRoller = ({ label, target }) => {
         <button
           onClick={rollDice}
           className="p-2 bg-imperial-dark border border-phosphor-dim rounded hover:bg-phosphor-green hover:text-black transition-all active:scale-95 group-hover:animate-pulse"
-          title="Roll D100"
+          title={t('rollD100')}
         >
           <Dices size={18} />
         </button>

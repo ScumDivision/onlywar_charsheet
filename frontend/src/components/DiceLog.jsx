@@ -4,22 +4,19 @@ import clsx from 'clsx';
 import { History } from 'lucide-react';
 
 const DiceLog = () => {
-  const { rollLog } = useGame();
+  const { rollLog, t } = useGame();
   const bottomRef = useRef(null);
-
-  // Scroll to new entries if needed, but since it's reverse order (newest top), we don't strictly need to scroll to bottom.
-  // Actually, newest on top is better for a log like this.
 
   return (
     <div className="bg-black/80 border-l border-phosphor-dim/30 h-full flex flex-col w-full md:w-80 fixed right-0 top-0 bottom-0 z-40 transform transition-transform translate-x-full md:translate-x-0 pt-20 pb-4 px-4 overflow-hidden">
         <div className="flex items-center gap-2 text-tarnished-gold mb-4 border-b border-phosphor-dim/30 pb-2">
             <History size={18} />
-            <h3 className="font-gothic uppercase tracking-wider">Vox-Log</h3>
+            <h3 className="font-gothic uppercase tracking-wider">{t('voxLog')}</h3>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
             {rollLog.length === 0 && (
-                <div className="text-xs text-gray-600 italic text-center mt-10">Waiting for data stream...</div>
+                <div className="text-xs text-gray-600 italic text-center mt-10">{t('voxIdle')}</div>
             )}
             {rollLog.map((entry) => (
                 <div key={entry.id} className={clsx(
@@ -35,9 +32,9 @@ const DiceLog = () => {
                             "font-bold",
                             entry.type.includes('success') ? "text-phosphor-green" : "text-mechanicus-red"
                         )}>
-                            Roll: {entry.roll}
+                            {t('rollLabel')}: {entry.roll}
                         </span>
-                        <span className="text-gray-400">vs {entry.target}</span>
+                        <span className="text-gray-400">{t('vs')} {entry.target}</span>
                     </div>
                     <div className="mt-1 text-right text-tarnished-gold font-bold uppercase text-[10px]">
                         {entry.result}

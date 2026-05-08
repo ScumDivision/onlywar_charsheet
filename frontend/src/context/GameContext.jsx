@@ -217,6 +217,30 @@ const translations = {
     strength: "Strength",
     critRating: "Crit",
     weaponRange: "Range",
+
+    // Armour locations
+    loc_head: "Head",
+    loc_body: "Body",
+    loc_leftArm: "Left Arm",
+    loc_rightArm: "Right Arm",
+    loc_leftLeg: "Left Leg",
+    loc_rightLeg: "Right Leg",
+    ap_short: "AP",
+    type_short: "Type",
+
+    // Misc placeholders / titles
+    skillName: "Skill Name",
+    talentName: "Name",
+    talentDesc: "Description...",
+    gearPlaceholder: "List additional gear, rations, and devotional items here...",
+    rollD100: "Roll D100",
+    rollDamage: "Roll Damage",
+    subtitleOW: "Departmento Munitorum Dataslate // Auth: Lambda-7",
+    subtitleRT: "Decree of Imperial Patent // Sigil: Mœhrder",
+    voxLog: "Vox-Log",
+    voxIdle: "Awaiting data stream...",
+    rollLabel: "Roll",
+    vs: "vs",
   },
   de: {
     // UI
@@ -360,11 +384,35 @@ const translations = {
     strength: "Stärke",
     critRating: "Krit",
     weaponRange: "Reichweite",
+
+    // Armour locations
+    loc_head: "Kopf",
+    loc_body: "Körper",
+    loc_leftArm: "Linker Arm",
+    loc_rightArm: "Rechter Arm",
+    loc_leftLeg: "Linkes Bein",
+    loc_rightLeg: "Rechtes Bein",
+    ap_short: "RW",
+    type_short: "Art",
+
+    // Misc placeholders / titles
+    skillName: "Fertigkeitsname",
+    talentName: "Name",
+    talentDesc: "Beschreibung...",
+    gearPlaceholder: "Weitere Ausrüstung, Rationen, devotionale Gegenstände eintragen...",
+    rollD100: "W100 würfeln",
+    rollDamage: "Schadenswurf",
+    subtitleOW: "Departmento Munitorum Datenschild // Auth: Lambda-7",
+    subtitleRT: "Imperialer Adelsbrief // Sigill: Mœhrder",
+    voxLog: "Vox-Log",
+    voxIdle: "Warte auf Datenstrom...",
+    rollLabel: "Wurf",
+    vs: "gegen",
   }
 };
 
 export const GameProvider = ({ children }) => {
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState('de');
   
   const t = useCallback((key) => {
     return translations[language][key] || key;

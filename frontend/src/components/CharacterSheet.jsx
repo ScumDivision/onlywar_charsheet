@@ -29,6 +29,21 @@ const CharacterSheet = () => {
 
   const isRT = character?.system === SYSTEMS.RT;
 
+  // Armour location keys are stable English strings in the DB; display
+  // labels are translated. Unknown/custom keys fall back to the raw string.
+  const ARMOUR_LOC_LABEL_KEYS = {
+      'Head': 'loc_head',
+      'Body': 'loc_body',
+      'Left Arm': 'loc_leftArm',
+      'Right Arm': 'loc_rightArm',
+      'Left Leg': 'loc_leftLeg',
+      'Right Leg': 'loc_rightLeg',
+  };
+  const armourLocLabel = (loc) => {
+      const key = ARMOUR_LOC_LABEL_KEYS[loc];
+      return key ? t(key) : loc;
+  };
+
   const updateField = (field, value) => {
       setCharacter(prev => ({ ...prev, [field]: value }));
   };
@@ -351,7 +366,7 @@ const CharacterSheet = () => {
                                         value={skill.name} 
                                         onChange={(e) => handleSkillChange(idx, 'name', e.target.value)}
                                         className="bg-transparent text-phosphor-green font-bold text-sm w-full focus:outline-none disabled:text-gray-300"
-                                        placeholder="Skill Name"
+                                        placeholder={t('skillName')}
                                     />
                                     {isEditMode && (
                                         <button onClick={() => removeSkill(idx)} className="text-red-900 hover:text-red-500 transition-opacity"><Trash2 size={12}/></button>
@@ -448,7 +463,7 @@ const CharacterSheet = () => {
                                         <button 
                                             onClick={() => rollDamage(wpn.name, wpn.dmg)}
                                             className="p-1 rounded bg-red-900/30 border border-red-900 text-red-400 hover:bg-red-900 hover:text-white transition-colors"
-                                            title="Roll Damage"
+                                            title={t('rollDamage')}
                                         >
                                             <Sword size={14} />
                                         </button>
@@ -482,7 +497,7 @@ const CharacterSheet = () => {
                                     value={talent.name} 
                                     onChange={(e) => updateTalent(idx, 'name', e.target.value)}
                                     className="bg-transparent text-phosphor-green font-bold text-sm w-full focus:outline-none disabled:text-gray-300 placeholder-gray-600"
-                                    placeholder="Name"
+                                    placeholder={t('talentName')}
                                 />
                                 {isEditMode && (
                                     <button onClick={() => removeTalent(idx)} className="text-red-900 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12}/></button>
@@ -493,7 +508,7 @@ const CharacterSheet = () => {
                                 value={talent.description}
                                 onChange={(e) => updateTalent(idx, 'description', e.target.value)}
                                 className="w-full bg-transparent text-xs text-gray-400 focus:outline-none focus:text-white resize-none h-12 custom-scrollbar disabled:text-gray-500"
-                                placeholder="Description..."
+                                placeholder={t('talentDesc')}
                              />
                         </div>
                     ))}
@@ -585,20 +600,20 @@ const CharacterSheet = () => {
                 <div className="grid gap-2">
                     {Object.entries(character.armour || {}).map(([loc, stats]) => (
                         <div key={loc} className="flex items-center justify-between bg-black/40 p-2 rounded border border-white/5">
-                            <span className="text-xs uppercase w-20 text-gray-400">{loc}</span>
+                            <span className="text-xs uppercase w-20 text-gray-400">{armourLocLabel(loc)}</span>
                             <div className="flex gap-2 items-center">
                                 <div className="flex flex-col items-center">
-                                    <label className="text-[8px] text-gray-600 uppercase">AP</label>
-                                    <input 
-                                        type="number" 
+                                    <label className="text-[8px] text-gray-600 uppercase">{t('ap_short')}</label>
+                                    <input
+                                        type="number"
                                         disabled={!isEditMode}
-                                        value={stats.ap} 
+                                        value={stats.ap}
                                         onChange={(e) => updateNestedField('armour', loc, 'ap', toInt(e.target.value))}
                                         className="w-10 bg-black/50 text-center text-white border border-white/10 text-sm p-1 focus:outline-none disabled:border-transparent"
                                     />
                                 </div>
                                 <div className="flex flex-col items-end">
-                                    <label className="text-[8px] text-gray-600 uppercase">Type</label>
+                                    <label className="text-[8px] text-gray-600 uppercase">{t('type_short')}</label>
                                     <input 
                                         type="text" 
                                         placeholder="-"
@@ -618,7 +633,7 @@ const CharacterSheet = () => {
             <StatBlock title={t('issuedEquipment')}>
                 <textarea 
                     className="w-full h-48 bg-black/40 border border-phosphor-dim/30 p-2 text-sm text-phosphor-green font-mono focus:outline-none focus:border-phosphor-green resize-none custom-scrollbar disabled:border-transparent disabled:text-gray-400"
-                    placeholder="List additional gear, rations, and devotional items here..."
+                    placeholder={t('gearPlaceholder')}
                     disabled={!isEditMode}
                     value={character.gear || ""}
                     onChange={(e) => updateField('gear', e.target.value)}
